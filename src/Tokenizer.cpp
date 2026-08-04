@@ -78,7 +78,7 @@ void Tokenizer::tokenize(const std::string& c) {
             SourceLocation location(row, column);
             std::string str;
 
-            while (current() != ' ') {
+            while (std::isalnum(current()) || current() == '_') {
                 str += current();
                 advance();
             }
@@ -90,7 +90,7 @@ void Tokenizer::tokenize(const std::string& c) {
             SourceLocation location(row, column);
             std::string str;
 
-            while (current() != ' ') {
+            while (is_character(current())) {
                 str += current();
                 advance();
             }
