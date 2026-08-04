@@ -10,7 +10,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 
-add_executable(sysCall src/main.cpp src/sysCall.cpp src/Tokenizer.cpp)
+add_executable(sysCall
+        src/main.cpp
+        src/sysCall.cpp
+        src/Tokenizer.cpp
+        src/Parser.cpp)
 target_include_directories(sysCall
     PRIVATE
         ${CMAKE_SOURCE_DIR}/include
