@@ -7,6 +7,9 @@
 #include <string>
 #include <string_view>
 #define ucharcast(x) static_cast<unsigned char>(x)
+#define next                                                                                       \
+    advance();                                                                                     \
+    continue
 
 void Tokenizer::advance() {
     if (peek() == '\n') {
@@ -68,7 +71,7 @@ void Tokenizer::pretty_print(std::ostream& os) {
     }
 }
 bool Tokenizer::is_character(const char c) {
-    return (std::string_view(".,:;-><+-/=!").find(c) != std::string_view::npos);
+    return (std::string_view(".,:;-><+-/=!&").find(c) != std::string_view::npos);
 }
 
 void Tokenizer::tokenize(const std::string& c) {
@@ -77,20 +80,15 @@ void Tokenizer::tokenize(const std::string& c) {
     row = 1;
     column = 1;
 
-    bool first_iteration = true;
     while (cursor < code.size()) {
-        if (!first_iteration)
-            advance();
-        else
-            first_iteration = false;
         if (!is_valid_position(cursor))
             break;
 
         if (current() == '\n') {
-            continue;
+            next;
         }
         if (current() == ' ') {
-            continue;
+            next;
         }
 
         SourceLocation location(row, column);

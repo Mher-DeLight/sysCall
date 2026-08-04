@@ -30,10 +30,13 @@ enum class TokenType {
 
     LParen,
     RParen,
+    LBrace,
+    RBrace,
 
     Colon,
     Semicolon,
     Arrow,
+    Ampersand,
 
     KeywordIf,
     KeywordElse,
@@ -45,7 +48,7 @@ enum class TokenType {
     EndOfFile
 };
 
-const std::array<std::pair<std::string, TokenType>, 18> word_table{
+const std::array<std::pair<std::string, TokenType>, 21> word_table{
     {{"", TokenType::None},
      {"if", TokenType::KeywordIf},
      {"else", TokenType::KeywordElse},
@@ -64,6 +67,9 @@ const std::array<std::pair<std::string, TokenType>, 18> word_table{
 
      {"(", TokenType::LParen},
      {")", TokenType::RParen},
+     {"{", TokenType::LBrace},
+     {"}", TokenType::RBrace},
+     {"&", TokenType::Ampersand},
 
      {":", TokenType::Colon},
      {";", TokenType::Semicolon},

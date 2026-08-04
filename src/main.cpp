@@ -3,6 +3,6 @@
 
 int main() {
     Compiler compiler;
-    std::string code = "int a = 5";
+    std::string code = "int&";
     compiler.compile(code);
 }
