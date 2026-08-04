@@ -48,3 +48,7 @@ _CPack_Packages/
 
 # Windows
 Thumbs.db
+
+# Cache files
+.cache/
+.cache/*

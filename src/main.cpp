@@ -2,8 +2,9 @@
 #include <string>
 
 int main() {
-    SysCAll_Compiler compiler;
+    Compiler compiler;
     std::string code = "  \
         int a = 5;        \
     ";
+    compiler.compile(code);
 }

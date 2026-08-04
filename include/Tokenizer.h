@@ -1,4 +1,5 @@
 #pragma once
+#include <array>
 #include <string>
 #include <vector>
 
@@ -8,9 +9,12 @@ public:
     int column = -1;
 
     SourceLocation(int r, int c) : row(r), column(c) {}
+    SourceLocation() = default;
 };
 
 enum class TokenType {
+    None,
+
     Identifier,
     Number,
     String,
@@ -35,11 +39,35 @@ enum class TokenType {
     KeywordElse,
 
     VartypeInt,
-    VarypeFloat,
+    VartypeFloat,
     VartypeString,
 
     EndOfFile
 };
+
+const std::array<std::pair<std::string, TokenType>, 18> word_table{
+    {{"", TokenType::None},
+     {"if", TokenType::KeywordIf},
+     {"else", TokenType::KeywordElse},
+     {"int", TokenType::VartypeInt},
+     {"float", TokenType::VartypeFloat},
+     {"string", TokenType::VartypeString},
+
+     {"+", TokenType::Plus},
+     {"-", TokenType::Minus},
+     {"*", TokenType::Star},
+     {"/", TokenType::Slash},
+
+     {"=", TokenType::Equal},
+     {"==", TokenType::EqualEqual},
+     {"!=", TokenType::NotEqual},
+
+     {"(", TokenType::LParen},
+     {")", TokenType::RParen},
+
+     {":", TokenType::Colon},
+     {";", TokenType::Semicolon},
+     {"->", TokenType::Arrow}}};
 
 class Token {
 public:
@@ -51,11 +79,23 @@ public:
         : type(type_), lexeme(lexeme_), location(source_location_) {}
 };
 
-class SysCAll_Tokenizer {
+class Tokenizer {
 private:
+    std::string code;
     std::vector<Token> tokens;
+    int cursor;
+
+    TokenType get_word_type(const std::string& str);
+    bool is_identifier(const std::string& str);
+    bool eof();
+    void advance();
+    char peek(int offset = 1) const;
+    char current() const;
+    void token(const TokenType type, const std::string& lexeme_ = "",
+               SourceLocation src = SourceLocation());
 
 public:
-    void tokenize(const std::string& code);
+    void tokenize(const std::string& c);
     std::vector<Token>& get_tokens();
+    void pretty_print(std::ostream& os);
 };

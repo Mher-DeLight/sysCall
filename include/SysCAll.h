@@ -3,9 +3,9 @@
 #include <string>
 #include <vector>
 
-class SysCAll_Compiler {
+class Compiler {
 private:
-    SysCAll_Tokenizer tokenizer;
+    Tokenizer tokenizer;
 
 public:
     void compile(const std::string& code);
