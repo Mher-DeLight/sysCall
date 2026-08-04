@@ -1,6 +1,9 @@
-#include <iostream>
+#include "../include/SysCAll.h"
+#include <string>
 
 int main() {
-  std::cout << "Hello, world!" << std::endl;
-  return 0;
+    SysCAll_Compiler compiler;
+    std::string code = "  \
+        int a = 5;        \
+    ";
 }
