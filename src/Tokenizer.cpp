@@ -71,7 +71,7 @@ void Tokenizer::pretty_print(std::ostream& os) {
     }
 }
 bool Tokenizer::is_character(const char c) {
-    return (std::string_view(".,:;-><+-/=!&").find(c) != std::string_view::npos);
+    return (std::string_view(".,:;-><+-/=!&*").find(c) != std::string_view::npos);
 }
 
 void Tokenizer::tokenize(const std::string& c) {
@@ -130,6 +130,7 @@ void Tokenizer::tokenize(const std::string& c) {
             token(TokenType::Number, str, location);
             continue;
         }
+        next;
     }
 
     token(TokenType::EndOfFile, "\0", SourceLocation(row, column));

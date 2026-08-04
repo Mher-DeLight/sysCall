@@ -1,4 +1,4 @@
-#include "../include/SysCAll.h"
+#include "../include/sysCall.h"
 #include <iostream>
 #include <string>
 
