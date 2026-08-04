@@ -1,4 +1,5 @@
 #include "../include/Tokenizer.h"
+#include "ErrorHandler.h"
 #include <algorithm>
 #include <cctype>
 #include <iostream>
@@ -16,10 +17,21 @@ void Tokenizer::advance() {
     cursor++;
 }
 char Tokenizer::peek(int offset) const {
+    if (!is_valid_position(cursor + offset))
+        return '\0';
     return code[cursor + offset];
 }
 char Tokenizer::current() const {
+    assert_validity(cursor);
     return code[cursor];
+}
+bool Tokenizer::is_valid_position(const int pos) const {
+    return (pos >= 0) && (pos < code.size());
+}
+void Tokenizer::assert_validity(const int pos, const std::string& msg) const {
+    if (!is_valid_position(pos)) {
+        panic(msg.empty() ? std::string("Position " + std::to_string(pos) + " is invalid.") : msg);
+    }
 }
 void Tokenizer::token(const TokenType tkn, const std::string& lexeme_, SourceLocation lct) {
     tokens.push_back(Token(tkn, lexeme_, lct));
@@ -70,6 +82,7 @@ void Tokenizer::tokenize(const std::string& c) {
             advance();
         else
             first_iteration = false;
+        assert_validity(cursor);
 
         if (current() == '\n') {
             continue;
@@ -82,7 +95,8 @@ void Tokenizer::tokenize(const std::string& c) {
         if (std::isalpha(current()) || current() == '_') {
             std::string str;
 
-            while (std::isalnum(current()) || current() == '_') {
+            while (!eof() && std::isalnum(current()) || current() == '_') {
+                assert_validity(cursor);
                 str += current();
                 advance();
             }
@@ -92,7 +106,8 @@ void Tokenizer::tokenize(const std::string& c) {
         } else if (is_character(current())) {
             std::string str;
 
-            while (is_character(current())) {
+            while (!eof() && is_character(current())) {
+                assert_validity(cursor);
                 str += current();
                 advance();
             }
@@ -103,7 +118,8 @@ void Tokenizer::tokenize(const std::string& c) {
             std::string str;
 
             bool found_dot = false;
-            while (std::isdigit(current()) || (!found_dot && current() == '.')) {
+            while (!eof() && std::isdigit(current()) || (!found_dot && current() == '.')) {
+                assert_validity(cursor);
                 str += current();
                 if (current() == '.')
                     found_dot = true;

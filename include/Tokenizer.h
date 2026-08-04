@@ -89,6 +89,8 @@ private:
     int column = 1;
 
     TokenType get_word_type(const std::string& str, bool allow_identifiers = true);
+    bool is_valid_position(const int pos) const;
+    void assert_validity(const int pos, const std::string& error_message = "") const;
     bool is_identifier(const std::string& str);
     bool eof();
     void advance();
