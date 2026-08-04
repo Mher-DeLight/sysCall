@@ -64,18 +64,22 @@ void Tokenizer::tokenize(const std::string& c) {
     row = 1;
     column = 1;
 
+    bool first_iteration = true;
     while (cursor < code.size()) {
-        if (current() == '\n') {
+        if (!first_iteration)
             advance();
+        else
+            first_iteration = false;
+
+        if (current() == '\n') {
             continue;
         }
         if (current() == ' ') {
-            advance();
             continue;
         }
 
+        SourceLocation location(row, column);
         if (std::isalpha(current()) || current() == '_') {
-            SourceLocation location(row, column);
             std::string str;
 
             while (std::isalnum(current()) || current() == '_') {
@@ -84,10 +88,8 @@ void Tokenizer::tokenize(const std::string& c) {
             }
 
             token(get_word_type(str), str, location);
-            advance();
             continue;
         } else if (is_character(current())) {
-            SourceLocation location(row, column);
             std::string str;
 
             while (is_character(current())) {
@@ -96,10 +98,20 @@ void Tokenizer::tokenize(const std::string& c) {
             }
 
             token(get_word_type(str, false), str, location);
-            advance();
+            continue;
+        } else if (std::isdigit(current())) {
+            std::string str;
+
+            bool found_dot = false;
+            while (std::isdigit(current()) || (!found_dot && current() == '.')) {
+                str += current();
+                if (current() == '.')
+                    found_dot = true;
+                advance();
+            }
+
+            token(TokenType::Number, str, location);
             continue;
         }
-
-        advance();
     }
 }
