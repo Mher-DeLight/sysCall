@@ -6,6 +6,7 @@
 #include <ostream>
 #include <string>
 #include <string_view>
+#define ucharcast(x) static_cast<unsigned char>(x)
 
 void Tokenizer::advance() {
     if (peek() == '\n') {
@@ -82,7 +83,8 @@ void Tokenizer::tokenize(const std::string& c) {
             advance();
         else
             first_iteration = false;
-        assert_validity(cursor);
+        if (!is_valid_position(cursor))
+            break;
 
         if (current() == '\n') {
             continue;
@@ -95,7 +97,7 @@ void Tokenizer::tokenize(const std::string& c) {
         if (std::isalpha(current()) || current() == '_') {
             std::string str;
 
-            while (!eof() && std::isalnum(current()) || current() == '_') {
+            while (!eof() && (std::isalnum(ucharcast(current())) || current() == '_')) {
                 assert_validity(cursor);
                 str += current();
                 advance();
@@ -106,7 +108,7 @@ void Tokenizer::tokenize(const std::string& c) {
         } else if (is_character(current())) {
             std::string str;
 
-            while (!eof() && is_character(current())) {
+            while (!eof() && (is_character(ucharcast(current())))) {
                 assert_validity(cursor);
                 str += current();
                 advance();
@@ -118,7 +120,8 @@ void Tokenizer::tokenize(const std::string& c) {
             std::string str;
 
             bool found_dot = false;
-            while (!eof() && std::isdigit(current()) || (!found_dot && current() == '.')) {
+            while (!eof() &&
+                   (std::isdigit(ucharcast(current())) || (!found_dot && current() == '.'))) {
                 assert_validity(cursor);
                 str += current();
                 if (current() == '.')
@@ -130,4 +133,6 @@ void Tokenizer::tokenize(const std::string& c) {
             continue;
         }
     }
+
+    token(TokenType::EndOfFile, "\0", SourceLocation(row, column));
 }
