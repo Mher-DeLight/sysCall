@@ -127,8 +127,23 @@ void Tokenizer::tokenize(const std::string& c) {
                 advance();
             }
 
-            token(TokenType::Number, str, location);
+            token(found_dot ? TokenType::FloatLiteral : TokenType::IntegerLiteral, str, location);
             continue;
+        } else if (current() == '\"') {
+            std::string str;
+            advance();
+
+            while (!eof() && (current() != '\"')) {
+                assert_validity(cursor);
+                str += current();
+                advance();
+            }
+
+            token(TokenType::StringLiteral, str, location);
+        } else if (current() == '\'') {
+            advance();
+            token(TokenType::CharLiteral, std::string(1, current()), location);
+            advance();
         }
         next;
     }

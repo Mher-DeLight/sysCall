@@ -16,8 +16,12 @@ enum class TokenType {
     None,
 
     Identifier,
-    Number,
-    String,
+    StringLiteral,
+    IntegerLiteral,
+    FloatLiteral,
+    CharLiteral,
+    BoolLiteral,
+    NullLiteral,
 
     Plus,
     Minus,
@@ -40,10 +44,7 @@ enum class TokenType {
 
     KeywordIf,
     KeywordElse,
-
-    VartypeInt,
-    VartypeFloat,
-    VartypeString,
+    KeywordVartype,
 
     EndOfFile
 };
@@ -52,9 +53,9 @@ const std::array<std::pair<std::string, TokenType>, 21> word_table{
     {{"", TokenType::None},
      {"if", TokenType::KeywordIf},
      {"else", TokenType::KeywordElse},
-     {"int", TokenType::VartypeInt},
-     {"float", TokenType::VartypeFloat},
-     {"string", TokenType::VartypeString},
+     {"int", TokenType::KeywordVartype},
+     {"float", TokenType::KeywordVartype},
+     {"string", TokenType::KeywordVartype},
 
      {"+", TokenType::Plus},
      {"-", TokenType::Minus},
