@@ -4,8 +4,15 @@
 #include <iostream>
 #include <ostream>
 #include <string>
+#include <string_view>
 
 void Tokenizer::advance() {
+    if (peek() == '\n') {
+        column = 1;
+        row++;
+    } else {
+        column++;
+    }
     cursor++;
 }
 char Tokenizer::peek(int offset) const {
@@ -25,11 +32,14 @@ bool Tokenizer::is_identifier(const std::string& str) {
                            [&str](const auto& p) { return p.first == str; });
     return it == word_table.end();
 }
-TokenType Tokenizer::get_word_type(const std::string& str) {
+TokenType Tokenizer::get_word_type(const std::string& str, bool allow_identifiers) {
     auto it = std::find_if(word_table.begin(), word_table.end(),
                            [&str](const auto& p) { return p.first == str; });
     if (it == word_table.end()) {
-        return TokenType::Identifier;
+        if (allow_identifiers)
+            return TokenType::Identifier;
+        else
+            return TokenType::None;
     } else {
         return it->second;
     }
@@ -44,29 +54,28 @@ void Tokenizer::pretty_print(std::ostream& os) {
         os << tkn.location.row << ":" << tkn.location.column << "\n";
     }
 }
+bool Tokenizer::is_character(const char c) {
+    return (std::string_view(".,:;-><+-/=!").find(c) != std::string_view::npos);
+}
 
 void Tokenizer::tokenize(const std::string& c) {
     code = c;
     cursor = 0;
-    int row = 1;
-    int column = 1;
+    row = 1;
+    column = 1;
 
     while (cursor < code.size()) {
         if (current() == '\n') {
-            row += 1;
-            column = 1;
             advance();
             continue;
         }
         if (current() == ' ') {
-            column++;
             advance();
             continue;
         }
 
-        column += 1;
-
         if (std::isalpha(current()) || current() == '_') {
+            SourceLocation location(row, column);
             std::string str;
 
             while (current() != ' ') {
@@ -74,7 +83,19 @@ void Tokenizer::tokenize(const std::string& c) {
                 advance();
             }
 
-            token(get_word_type(str), str, SourceLocation(row, column));
+            token(get_word_type(str), str, location);
+            advance();
+            continue;
+        } else if (is_character(current())) {
+            SourceLocation location(row, column);
+            std::string str;
+
+            while (current() != ' ') {
+                str += current();
+                advance();
+            }
+
+            token(get_word_type(str, false), str, location);
             advance();
             continue;
         }

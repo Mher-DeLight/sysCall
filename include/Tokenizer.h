@@ -83,16 +83,20 @@ class Tokenizer {
 private:
     std::string code;
     std::vector<Token> tokens;
-    int cursor;
 
-    TokenType get_word_type(const std::string& str);
+    int cursor = 0;
+    int row = 1;
+    int column = 1;
+
+    TokenType get_word_type(const std::string& str, bool allow_identifiers = true);
     bool is_identifier(const std::string& str);
     bool eof();
     void advance();
     char peek(int offset = 1) const;
-    char current() const;
     void token(const TokenType type, const std::string& lexeme_ = "",
                SourceLocation src = SourceLocation());
+    char current() const;
+    bool is_character(const char c);
 
 public:
     void tokenize(const std::string& c);
