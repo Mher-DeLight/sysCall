@@ -14,7 +14,9 @@ add_executable(sysCall
         src/main.cpp
         src/sysCall.cpp
         src/Tokenizer.cpp
-        src/Parser.cpp)
+        src/Parser.cpp
+        src/Visitor.cpp
+)
 target_include_directories(sysCall
     PRIVATE
         ${CMAKE_SOURCE_DIR}/include

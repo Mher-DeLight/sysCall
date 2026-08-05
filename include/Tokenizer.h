@@ -3,17 +3,6 @@
 #include <string>
 #include <vector>
 
-class SourceLocation {
-public:
-    int row = -1;
-    int column = -1;
-
-    SourceLocation(int r, int c) : row(r), column(c) {}
-    SourceLocation() = default;
-};
-
-;
-
 class Token {
 public:
     TokenType type;

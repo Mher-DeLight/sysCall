@@ -61,6 +61,9 @@ TokenType Tokenizer::get_word_type(const std::string& str, bool allow_identifier
     }
     return TokenType::None;
 }
+std::vector<Token>& Tokenizer::get_tokens() {
+    return tokens;
+}
 
 void Tokenizer::pretty_print(std::ostream& os) {
     os << "=== TOKENS ===\n";
