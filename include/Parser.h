@@ -7,23 +7,44 @@
 class Parser {
 private:
     std::vector<Token> tokens;
-    EntryPoint entry_point;
+    std::unique_ptr<ScopeBlock> entry_point = std::make_unique<ScopeBlock>();
 
     int cursor = 0;
 
-    Token& peek(int offset = 1);
-    Token& previous(int offset = 1);
-    Token& eat(TokenType type, const std::string& msg = "");
+    Token& peek(int offset = 0);
+    Token& previous(int offset = 0);
+    Token eat(TokenType type, const std::string& msg = "");
     bool isEnd();
     bool match(TokenType type);
     bool check(TokenType type);
     void advance(int offset = 1);
     void parserPanic(const std::string& msg, const SourceLocation& location = SourceLocation());
 
-    void parseVariableDeclaration();
+    std::unique_ptr<VariableDefinition> parseVariableDeclaration();
 
+    // clang-format off
+    std::unique_ptr<Expression> parseExpression();
+        std::unique_ptr<Expression> parseLogicalOr();
+        std::unique_ptr<Expression> parseLogicalAnd();
+        std::unique_ptr<Expression> parseEquality();
+        std::unique_ptr<Expression> parseRelational();
+        std::unique_ptr<Expression> parseAddition();
+        std::unique_ptr<Expression> parseMultiplication();
+        std::unique_ptr<Expression> parseUnary();
+        std::unique_ptr<Expression> parseFactor();
+        std::unique_ptr<Literal> parseLiteral();
+            std::unique_ptr<IntegerLiteral> parseInteger();
+            std::unique_ptr<FloatLiteral> parseFloat();
+            std::unique_ptr<StringLiteral> parseString();
+
+        std::unique_ptr<FunctionCallExpr> parseFunctionCallExpr();
+
+    std::unique_ptr<IfStatement> parseIfStatement();
+    std::unique_ptr<ScopeBlock> parseScope(bool require_brackets = true);
+
+    // clang-format on
 public:
     void load_tokens(std::vector<Token> tokens_);
     void parse();
-    std::unique_ptr<EntryPoint> hand_over_AST();
+    std::unique_ptr<ScopeBlock> hand_over_AST();
 };

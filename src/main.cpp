@@ -5,7 +5,7 @@
 #include <stdexcept>
 
 int main() {
-    std::ifstream fileStream("code.scl");
+    std::ifstream fileStream("../code.scl");
     if (!fileStream.is_open()) {
         throw std::runtime_error("couldn't open file lolz");
     }

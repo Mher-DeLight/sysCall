@@ -6,9 +6,9 @@ void PrettyPrinter::printIndent() {
         stream << "    ";
     }
 }
-void PrettyPrinter::visit(EntryPoint& node) {
+void PrettyPrinter::visit(ScopeBlock& node) {
     printIndent();
-    stream << "== ENTRY POINT ==" << std::endl;
+    stream << "ScopeBlock" << std::endl;
 
     indent++;
     for (auto& child : node.children) {
@@ -27,6 +27,42 @@ void PrettyPrinter::visit(VariableDefinition& node) {
     stream << "Type(" << (int)node.type << ")\n";
     node.value->accept(*this);
     indent--;
+}
+void PrettyPrinter::visit(BinaryExpression& node) {
+    printIndent();
+
+    stream << "BinaryExpression\n";
+    indent++;
+    node.left->accept(*this);
+
+    printIndent();
+    stream << "Operation(" << (int)node.op << ")\n";
+
+    node.right->accept(*this);
+    indent--;
+}
+void PrettyPrinter::visit(IfStatement& node) {
+    printIndent();
+
+    stream << "IfStatement\n";
+    indent++;
+    node.condition->accept(*this);
+    node.block->accept(*this);
+    node.nextStatement->accept(*this);
+}
+void PrettyPrinter::visit(FunctionCallExpr& node) {
+    printIndent();
+    stream << "FunctionCall " << node.identifier << std::endl;
+
+    indent++;
+    for (auto& arg : node.args) {
+        arg->accept(*this);
+    }
+    indent--;
+}
+void PrettyPrinter::visit(VariableReference& node) {
+    printIndent();
+    stream << "VariableReference " << node.identifier << std::endl;
 }
 void PrettyPrinter::visit(IntegerLiteral& node) {
     printIndent();
@@ -47,4 +83,12 @@ void PrettyPrinter::visit(BooleanLiteral& node) {
 void PrettyPrinter::visit(VoidLiteral& node) {
     printIndent();
     stream << "VoidLiteral";
+}
+void PrettyPrinter::visit(UnaryExpression& node) {
+    printIndent();
+
+    stream << "UnaryExpression " << (int)node.op;
+    indent++;
+    node.value->accept(*this);
+    indent--;
 }

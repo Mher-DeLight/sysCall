@@ -7,24 +7,37 @@
 void Parser::load_tokens(std::vector<Token> tkns) {
     tokens = std::move(tkns);
 }
+
 void Parser::parse() {
-    cursor = -1;
-
-    while (!isEnd()) {
-        std::cout << (int)peek().type << std::endl;
-        if (check(TokenType::KeywordVartype)) {
-            parseVariableDeclaration();
-        }
-
-        advance();
-    }
+    cursor = 0;
+    entry_point = parseScope(false);
 
     PrettyPrinter p(std::cout);
-    p.visit(entry_point);
+    p.visit(*entry_point);
+}
+std::unique_ptr<ScopeBlock> Parser::parseScope(bool require_brackets) {
+    std::unique_ptr<ScopeBlock> scope = std::make_unique<ScopeBlock>();
+
+    if (require_brackets)
+        eat(TokenType::LBrace, "expected '{' on scope entry");
+
+    while (!isEnd()) {
+        if (check(TokenType::KeywordVartype)) {
+            scope->children.push_back(parseVariableDeclaration());
+        } else if (check(TokenType::KeywordIf)) {
+            scope->children.push_back(parseIfStatement());
+        }
+
+        if (match(TokenType::EndOfFile))
+            break;
+        if (require_brackets && match(TokenType::RBrace))
+            break;
+    }
+    return std::move(scope);
 }
 
 // == PARSE FUNCTIONS ==
-void Parser::parseVariableDeclaration() {
+std::unique_ptr<VariableDefinition> Parser::parseVariableDeclaration() {
     Token tkn = eat(TokenType::KeywordVartype, "expected variable type for variable declaration");
 
     std::string type_string = tkn.lexeme;
@@ -44,32 +57,207 @@ void Parser::parseVariableDeclaration() {
 
     eat(TokenType::Equal);
 
-    std::unique_ptr<Literal> value;
+    std::unique_ptr<Expression> value = parseAddition();
+    eat(TokenType::Semicolon);
 
-    switch (type) {
-        case VariableType::INT: {
-            Token tkn = eat(TokenType::IntegerLiteral, "expected integer literal");
-            value =
-                std::move(std::make_unique<IntegerLiteral>(tkn.location, std::stoi(tkn.lexeme)));
-            break;
+    return std::make_unique<VariableDefinition>(tkn.location, type, identifier, std::move(value));
+}
+std::unique_ptr<IfStatement> Parser::parseIfStatement() {
+    SourceLocation lct = eat(TokenType::KeywordIf, "expected if keyword for if statement").location;
+    eat(TokenType::LParen, "expected '(' after if statement");
+    std::unique_ptr<Expression> condition = parseExpression();
+
+    eat(TokenType::RParen, "expected ')' after if statement condition");
+
+    std::unique_ptr<ScopeBlock> scope = parseScope(true);
+
+    return std::make_unique<IfStatement>(lct, std::move(condition), std::move(scope), nullptr);
+}
+std::unique_ptr<FunctionCallExpr> Parser::parseFunctionCallExpr() {}
+
+// == EXPRESSION PARSERS ==
+
+std::unique_ptr<Expression> Parser::parseExpression() {
+    return parseLogicalOr();
+}
+std::unique_ptr<Expression> Parser::parseLogicalOr() {
+    auto tkn = peek();
+    auto node = parseLogicalAnd();
+    while (match(TokenType::DoubleStraightLine)) {
+        advance();
+        auto right = parseLogicalAnd();
+        node = std::make_unique<BinaryExpression>(tkn.location, std::move(node),
+                                                  BinaryOperation::LOGICAL_OR, std::move(right));
+    }
+    return node;
+}
+std::unique_ptr<Expression> Parser::parseLogicalAnd() {
+    auto tkn = peek();
+    auto node = parseEquality();
+    while (match(TokenType::DoubleAmpersand)) {
+        advance();
+        auto right = parseEquality();
+        node = std::make_unique<BinaryExpression>(tkn.location, std::move(node),
+                                                  BinaryOperation::LOGICAL_AND, std::move(right));
+    }
+    return node;
+}
+std::unique_ptr<Expression> Parser::parseEquality() {
+    auto tkn = peek();
+    auto node = parseRelational();
+    while (check(TokenType::EqualEqual) || check(TokenType::NotEqual)) {
+        BinaryOperation op =
+            check(TokenType::EqualEqual) ? BinaryOperation::EQUALS : BinaryOperation::NOT_EQUALS;
+        advance();
+
+        auto right = parseRelational();
+        node =
+            std::make_unique<BinaryExpression>(tkn.location, std::move(node), op, std::move(right));
+    }
+    return node;
+}
+std::unique_ptr<Expression> Parser::parseRelational() {
+    auto tkn = peek();
+    auto node = parseAddition();
+    while (check(TokenType::GreaterThan) || check(TokenType::GreaterEqual) ||
+           check(TokenType::LessThan) || check(TokenType::LessEqual)) {
+        BinaryOperation op;
+        switch (peek().type) {
+            case TokenType::GreaterThan:
+                op = BinaryOperation::GREATER_THAN;
+                break;
+            case TokenType::GreaterEqual:
+                op = BinaryOperation::GREATER_THAN_OR_EQUAL;
+                break;
+            case TokenType::LessThan:
+                op = BinaryOperation::LESS_THAN;
+                break;
+            case TokenType::LessEqual:
+                op = BinaryOperation::LESS_THAN_OR_EQUAL;
+                break;
+
+            default:
+                parserPanic("invalid operation type \"" + peek().lexeme + "\"", peek().location);
+                break;
         }
-        case VariableType::FLOAT: {
-            Token tkn = eat(TokenType::FloatLiteral, "expected float literal");
-            value = std::move(std::make_unique<FloatLiteral>(tkn.location, std::stof(tkn.lexeme)));
-            break;
-        }
-        case VariableType::STRING: {
-            Token tkn = eat(TokenType::StringLiteral, "expected string literal");
-            value = std::move(std::make_unique<StringLiteral>(tkn.location, tkn.lexeme));
-            break;
-        }
-        default: {
-            parserPanic("invalid variable type \"" + type_string + "\"", tkn.location);
-        }
+        advance();
+
+        auto right = parseAddition();
+        node =
+            std::make_unique<BinaryExpression>(tkn.location, std::move(node), op, std::move(right));
+    }
+    return node;
+}
+std::unique_ptr<Expression> Parser::parseAddition() {
+    auto tkn = peek();
+    auto node = parseMultiplication();
+    while (check(TokenType::Plus) || check(TokenType::Minus)) {
+        BinaryOperation op =
+            check(TokenType::Plus) ? BinaryOperation::ADD : BinaryOperation::SUBTRACT;
+        advance();
+
+        auto right = parseMultiplication();
+
+        // wrap the current expresion with another one for a nice tree structure
+        node =
+            std::make_unique<BinaryExpression>(tkn.location, std::move(node), op, std::move(right));
+    }
+    return node;
+}
+std::unique_ptr<Expression> Parser::parseMultiplication() {
+    auto tkn = peek();
+    auto node = parseUnary();
+    while (check(TokenType::Star) || check(TokenType::Slash)) {
+        BinaryOperation op =
+            check(TokenType::Star) ? BinaryOperation::MULTIPLY : BinaryOperation::DIVIDE;
+        advance();
+
+        auto right = parseUnary();
+
+        node =
+            std::make_unique<BinaryExpression>(tkn.location, std::move(node), op, std::move(right));
     }
 
-    entry_point.children.push_back(
-        std::make_unique<VariableDefinition>(type, identifier, std::move(value)));
+    return node;
+}
+std::unique_ptr<Expression> Parser::parseUnary() {
+    UnaryOperation opr;
+    bool hasUnary = false;
+
+    auto tkn = peek();
+
+    if (match(TokenType::Exclamation)) {
+        hasUnary = true;
+        opr = UnaryOperation::COMPLEMENT;
+    }
+
+    if (hasUnary) {
+        return std::make_unique<UnaryExpression>(tkn.location, parseFactor(), opr);
+    }
+    return parseFactor();
+}
+std::unique_ptr<Expression> Parser::parseFactor() {
+    auto tkn = peek();
+    if (check(TokenType::LParen)) {
+        eat(TokenType::LParen, "expected '('");
+        auto expr = parseExpression();
+        eat(TokenType::RParen, "expected ')'");
+        return std::move(expr);
+    } else if (check(TokenType::Identifier)) {
+        std::string identifier = eat(TokenType::Identifier, "expected identifier").lexeme;
+        if (match(TokenType::LParen)) {
+            advance(-1);
+            return parseFunctionCallExpr();
+        }
+        return std::make_unique<VariableReference>(tkn.location, identifier);
+    }
+    return parseLiteral();
+}
+std::unique_ptr<Literal> Parser::parseLiteral() {
+    bool negative = false;
+    if (match(TokenType::Minus)) {
+        negative = true;
+    }
+    auto token = peek();
+    advance();
+
+    if (token.type == TokenType::StringLiteral && !negative) {
+        return std::make_unique<StringLiteral>(token.location, token.lexeme);
+    } else if (token.type == TokenType::BoolLiteral && !negative &&
+               (token.lexeme == "true" || token.lexeme == "false")) {
+        return std::make_unique<BooleanLiteral>(token.location, token.lexeme == "true");
+    } else if (token.type == TokenType::IntegerLiteral) {
+        return std::make_unique<IntegerLiteral>(token.location,
+                                                std::stoi(token.lexeme) * (negative ? -1 : 1));
+    } else if (token.type == TokenType::FloatLiteral) {
+        return std::make_unique<FloatLiteral>(token.location,
+                                              std::stof(token.lexeme) * (negative ? -1 : 1));
+    }
+
+    parserPanic("invalid token " + token.lexeme, token.location);
+    return std::unique_ptr<VoidLiteral>();
+}
+std::unique_ptr<IntegerLiteral> Parser::parseInteger() {
+    bool negative = false;
+    if (match(TokenType::Minus)) {
+        negative = true;
+    }
+
+    Token tkn = eat(TokenType::IntegerLiteral, "expected integer literal");
+    return std::make_unique<IntegerLiteral>(tkn.location, std::stoi(tkn.lexeme));
+}
+std::unique_ptr<FloatLiteral> Parser::parseFloat() {
+    bool negative = false;
+    if (match(TokenType::Minus)) {
+        negative = true;
+    }
+
+    Token tkn = eat(TokenType::FloatLiteral, "expected float literal");
+    return std::make_unique<FloatLiteral>(tkn.location, std::stof(tkn.lexeme));
+}
+std::unique_ptr<StringLiteral> Parser::parseString() {
+    Token tkn = eat(TokenType::StringLiteral, "expected a string literal");
+    return std::make_unique<StringLiteral>(tkn.location, tkn.lexeme);
 }
 
 // == HELPERS ==
@@ -110,14 +298,13 @@ void Parser::advance(int offset) {
                     "; position is out of bounds.");
     }
 }
-Token& Parser::eat(TokenType type, const std::string& msg) {
-    if (!check(type)) {
+Token Parser::eat(TokenType type, const std::string& msg) {
+    if (!check(type))
         parserPanic(msg, peek().location);
-    } else {
-        advance();
-        return peek(0);
-    }
-    return peek(0);
+
+    Token t = peek();
+    advance();
+    return t;
 }
 void Parser::parserPanic(const std::string& msg, const SourceLocation& src) {
     panic("[PARSER PANIC] " + msg + " [AT " + std::to_string(src.row) + ":" +
