@@ -1,8 +1,17 @@
 #include "../include/sysCall.h"
-#include <string>
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <stdexcept>
 
 int main() {
+    std::ifstream fileStream("code.scl");
+    if (!fileStream.is_open()) {
+        throw std::runtime_error("couldn't open file lolz");
+    }
+    std::ostringstream sstr;
+    sstr << fileStream.rdbuf();
+
     Compiler compiler;
-    std::string code = "string a = \"hello\";";
-    compiler.compile(code);
+    compiler.compile(sstr.str());
 }
