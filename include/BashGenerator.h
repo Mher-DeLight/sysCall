@@ -8,6 +8,7 @@ private:
     std::stringstream bash;
 
     std::unique_ptr<ScopeBlock> ast;
+    ExpressionInfo analyseExpression(Expression* expr);
 
 public:
     void load_ast(std::unique_ptr<ScopeBlock> ast__);

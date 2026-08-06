@@ -17,7 +17,7 @@ void BashGenerator::visit(ScopeBlock& node) {
     }
 }
 void BashGenerator::visit(StringLiteral& node) {
-    bash << "\"" << node.string << "\"";
+    bash << "\\\"" << node.string << "\\\"";
 }
 void BashGenerator::visit(FloatLiteral& node) {
     bash << node.number;
@@ -29,16 +29,40 @@ void BashGenerator::visit(BooleanLiteral& node) {
     bash << (node.state ? "true" : "false");
 }
 void BashGenerator::visit(VoidLiteral& node) {
-    bash << "\"NONE\"";
+    bash << "\\\"NONE\\\"";
 }
 void BashGenerator::visit(VariableDefinition& node) {
     bash << node.identifier << "=";
     node.value->accept(*this);
     bash << "\n";
 }
-void BashGenerator::visit(BinaryExpression& node) {}
+void BashGenerator::visit(BinaryExpression& node) {
+    bash << "$(echo \"";
+    node.left->accept(*this);
+
+    switch (node.op) {
+        case BinaryOperation::ADD:
+            bash << "+";
+            break;
+        case BinaryOperation::SUBTRACT:
+            bash << "-";
+            break;
+        case BinaryOperation::MULTIPLY:
+            bash << "*";
+            break;
+        case BinaryOperation::DIVIDE:
+            bash << "/";
+            break;
+        default:
+            break;
+    }
+    node.right->accept(*this);
+    bash << "\" | bc -l)";
+}
 void BashGenerator::visit(IfStatement& node) {}
 void BashGenerator::visit(FunctionCallExpr& node) {}
-void BashGenerator::visit(VariableReference& node) {}
+void BashGenerator::visit(VariableReference& node) {
+    bash << "\"${" << node.identifier << "}\"";
+}
 void BashGenerator::visit(UnaryExpression& node) {}
 void BashGenerator::visit(VariableReassignment& node) {}

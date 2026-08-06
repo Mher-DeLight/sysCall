@@ -7,14 +7,6 @@
 
 template <typename T> using uq = std::unique_ptr<T>;
 
-struct ExpressionInfo {
-    VariableType type;
-    bool isLValue = false;
-    bool isConstant = false;
-
-    ExpressionInfo(VariableType type_, bool isLValue_ = false, bool isConstant_ = false)
-        : type(type_), isLValue(isLValue_), isConstant(isConstant_) {}
-};
 enum class SymbolKind { Variable, Function };
 struct Symbol {
     std::string identifier;

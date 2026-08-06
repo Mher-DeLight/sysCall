@@ -122,6 +122,15 @@ const std::unordered_map<std::string, TokenType> word_table{{{"", TokenType::Non
                                                              {"<=", TokenType::LessEqual},
                                                              {",", TokenType::Comma}}};
 
+struct ExpressionInfo {
+    VariableType type;
+    bool isLValue = false;
+    bool isConstant = false;
+
+    ExpressionInfo(VariableType type_, bool isLValue_ = false, bool isConstant_ = false)
+        : type(type_), isLValue(isLValue_), isConstant(isConstant_) {}
+};
+
 class Visitor;
 class PrettyPrinter;
 
