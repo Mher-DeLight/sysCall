@@ -92,7 +92,22 @@ void BashGenerator::visit(BinaryExpression& node) {
     }
 }
 void BashGenerator::visit(IfStatement& node) {}
-void BashGenerator::visit(FunctionCallExpr& node) {}
+void BashGenerator::visit(FunctionCallExpr& node) {
+    bash << "$(";
+
+    size_t pos = node.identifier.find('.');
+    std::string first =
+        (pos == std::string::npos) ? node.identifier : node.identifier.substr(0, pos);
+
+    if (std::find(includes.begin(), includes.end(), first) != includes.end()) {
+        std::replace(node.identifier.begin(), node.identifier.end(), '.', ' ');
+        bash << node.identifier << " ";
+        node.args.at(0).get()->accept(*this);
+        bash << ")";
+    } else {
+        genPanic("invalid to invoke " + node.identifier + " as expression");
+    }
+}
 void BashGenerator::visit(VariableReference& node) {
     switch (node.return_type) {
         case VariableType::STRING:
@@ -119,7 +134,7 @@ void BashGenerator::visit(FunctionCallStmt& node) {
     if (std::find(includes.begin(), includes.end(), first) != includes.end()) {
         std::replace(node.identifier.begin(), node.identifier.end(), '.', ' ');
         bash << node.identifier << " ";
-        dynamic_cast<StringLiteral*>(node.args.at(0).get())->accept(*this);
+        node.args.at(0).get()->accept(*this);
         bash << "\n";
     }
 }

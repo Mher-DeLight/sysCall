@@ -1,2 +1,4 @@
 #include <printf>
-printf("\"hello\n\"");
+
+string a = printf("hello");
+printf(a);

@@ -13,7 +13,7 @@ void SemanticAnalyser::analyse() {
     enter_scope();
 
     for (auto& inc : includes) {
-        addSymbol(Symbol(inc, SymbolKind::Function, VariableType::VOID,
+        addSymbol(Symbol(inc, SymbolKind::Function, VariableType::STRING,
                          std::vector<VariableType>{VariableType::STRING}));
     }
 
@@ -173,6 +173,10 @@ void SemanticAnalyser::visit(IfStatement& node) {
         node.nextStatement->accept(*this);
 }
 void SemanticAnalyser::visit(FunctionCallExpr& node) {
+    if (commandIncluded(node.identifier) && !symbolExists(node.identifier)) {
+        addSymbol(Symbol(node.identifier, SymbolKind::Function, VariableType::STRING,
+                         std::vector<VariableType>{VariableType::STRING}));
+    }
     if (!symbolExists(node.identifier)) {
         semaPanic("cannot reference function \"" + node.identifier + "\"; it does not exist.",
                   node.location);
@@ -227,8 +231,8 @@ void SemanticAnalyser::visit(UnaryExpression& node) {
     node.value->accept(*this);
 }
 void SemanticAnalyser::visit(FunctionCallStmt& node) {
-    if (commandIncluded(node.identifier)) {
-        addSymbol(Symbol(node.identifier, SymbolKind::Function, VariableType::VOID,
+    if (commandIncluded(node.identifier) && !symbolExists(node.identifier)) {
+        addSymbol(Symbol(node.identifier, SymbolKind::Function, VariableType::STRING,
                          std::vector<VariableType>{VariableType::STRING}));
     }
     if (!symbolExists(node.identifier)) {

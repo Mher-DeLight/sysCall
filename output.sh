@@ -1,1 +1,2 @@
-printf "hello\n"
+a="$(printf hello)"
+printf ${a}
