@@ -14,7 +14,7 @@ void SemanticAnalyser::analyse() {
 
     for (auto& inc : includes) {
         addSymbol(Symbol(inc, SymbolKind::Function, VariableType::STRING,
-                         std::vector<VariableType>{VariableType::STRING}));
+                         std::vector<VariableType>{VariableType::ANY}));
     }
 
     ast->accept(*this);
@@ -186,21 +186,29 @@ void SemanticAnalyser::visit(IfStatement& node) {
 void SemanticAnalyser::visit(FunctionCallExpr& node) {
     if (commandIncluded(node.identifier) && !symbolExists(node.identifier)) {
         addSymbol(Symbol(node.identifier, SymbolKind::Function, VariableType::STRING,
-                         std::vector<VariableType>{VariableType::STRING}));
+                         std::vector<VariableType>{VariableType::ANY}));
     }
     if (!symbolExists(node.identifier)) {
         semaPanic("cannot reference function \"" + node.identifier + "\"; it does not exist.",
                   node.location);
     }
     if (getSymbol(node.identifier)->kind != SymbolKind::Function) {
-        semaPanic("\"" + node.identifier + "\" is used as a variable even though it is a function",
+        semaPanic("\"" + node.identifier + "\" is used as a function even though it is a variable",
                   node.location);
     }
 
-    auto info = analyseExpression(&node);
-    for (int i = 0; i < node.args.size(); i++) {
+    auto params = getSymbol(node.identifier)->parameters;
+    for (int i = 0; i < params.size(); i++) {
+        if (node.args.size() <= i) {
+            semaPanic("less arguments than requested");
+        }
+        if (node.args.size() > params.size()) {
+            semaPanic("more arguments than requested");
+        }
+
         auto arg = node.args.at(i).get();
-        if (arg->return_type != getSymbol(node.identifier)->parameters[i])
+        analyseExpression(arg);
+        if (arg->return_type != params[i] && params[i] != VariableType::ANY)
             semaPanic("argument is not of the requested type", node.args.at(i).get()->location);
         arg->accept(*this);
     }
@@ -211,7 +219,7 @@ void SemanticAnalyser::visit(VariableReference& node) {
                   node.location);
     }
     if (getSymbol(node.identifier)->kind != SymbolKind::Variable) {
-        semaPanic("\"" + node.identifier + "\" is used as a function even though it is a variable",
+        semaPanic("\"" + node.identifier + "\" is used as a variable even though it is a function",
                   node.location);
     }
     analyseExpression(&node);
@@ -244,29 +252,29 @@ void SemanticAnalyser::visit(UnaryExpression& node) {
 void SemanticAnalyser::visit(FunctionCallStmt& node) {
     if (commandIncluded(node.identifier) && !symbolExists(node.identifier)) {
         addSymbol(Symbol(node.identifier, SymbolKind::Function, VariableType::STRING,
-                         std::vector<VariableType>{VariableType::STRING}));
+                         std::vector<VariableType>{VariableType::ANY}));
     }
     if (!symbolExists(node.identifier)) {
         semaPanic("cannot reference function \"" + node.identifier + "\"; it does not exist.",
                   node.location);
     }
     if (getSymbol(node.identifier)->kind != SymbolKind::Function) {
-        semaPanic("\"" + node.identifier + "\" is used as a variable even though it is a function",
+        semaPanic("\"" + node.identifier + "\" is used as a function even though it is a variable",
                   node.location);
     }
 
-    int paramCount = getSymbol(node.identifier)->parameters.size();
-    for (int i = 0; i < paramCount; i++) {
+    auto params = getSymbol(node.identifier)->parameters;
+    for (int i = 0; i < params.size(); i++) {
         if (node.args.size() <= i) {
             semaPanic("less arguments than requested");
         }
-        if (node.args.size() > paramCount) {
+        if (node.args.size() > params.size()) {
             semaPanic("more arguments than requested");
         }
 
         auto arg = node.args.at(i).get();
         analyseExpression(arg);
-        if (arg->return_type != getSymbol(node.identifier)->parameters[i])
+        if (arg->return_type != params[i] && params[i] != VariableType::ANY)
             semaPanic("argument is not of the requested type", node.args.at(i).get()->location);
         arg->accept(*this);
     }

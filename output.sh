@@ -5,10 +5,4 @@
 # Generated with sysCall. https://www.github.com/Mher-DeLight/SysCAll
 
 x=3.2
-if [[ $(echo "${x}>=4" | bc -l) = 1 ]]; then
-x=$(echo "${x}+1" | bc -l)
-fi
-if [[ $(echo "${x}<4" | bc -l) = 1 ]]; then
-x=$(echo "${x}-1" | bc -l)
-fi
-echo $x
+echo ${x}
