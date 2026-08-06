@@ -133,7 +133,11 @@ void SemanticAnalyser::visit(IfStatement& node) {
     if (node.nextStatement != nullptr)
         node.nextStatement->accept(*this);
 }
-void SemanticAnalyser::visit(FunctionCallExpr& node) {}
+void SemanticAnalyser::visit(FunctionCallExpr& node) {
+    for (auto& arg : node.args) {
+        arg->accept(*this);
+    }
+}
 void SemanticAnalyser::visit(VariableReference& node) {
     if (!symbolExists(node.identifier)) {
         semaPanic("cannot reference variable \"" + node.identifier + "\"; it does not exist.",
@@ -158,4 +162,6 @@ void SemanticAnalyser::visit(VariableDefinition& node) {
     addSymbol(
         Symbol(node.identifier, SymbolKind::Variable, node.type, std::vector<VariableType>()));
 }
-void SemanticAnalyser::visit(UnaryExpression& node) {}
+void SemanticAnalyser::visit(UnaryExpression& node) {
+    node.value->accept(*this);
+}
