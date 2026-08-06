@@ -152,6 +152,22 @@ void Tokenizer::tokenize(const std::string& c) {
             advance();
 
             while (!eof() && (current() != '\"')) {
+                if (current() == '\\') {
+                    advance();
+                    assert_validity(cursor);
+                    if (current() == 'n') {
+                        str += "\\n";
+                        advance();
+                        continue;
+                    } else if (current() == 't') {
+                        str += "\\t";
+                        advance();
+                        continue;
+                    }
+                    str += current();
+                    advance();
+                    continue;
+                }
                 assert_validity(cursor);
                 str += current();
                 advance();

@@ -119,6 +119,7 @@ void BashGenerator::visit(FunctionCallStmt& node) {
     if (std::find(includes.begin(), includes.end(), first) != includes.end()) {
         std::replace(node.identifier.begin(), node.identifier.end(), '.', ' ');
         bash << node.identifier << " ";
-        bash << dynamic_cast<StringLiteral*>(node.args.at(0).get())->string;
+        dynamic_cast<StringLiteral*>(node.args.at(0).get())->accept(*this);
+        bash << "\n";
     }
 }

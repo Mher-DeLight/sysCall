@@ -34,6 +34,7 @@ class SemanticAnalyser : public Visitor {
     void addSymbol(const Symbol& symbol);
     void semaPanic(const std::string& msg, SourceLocation src = SourceLocation());
 
+    bool commandIncluded(const std::string& cmd);
     bool commandExists(const std::string& cmd);
     bool symbolExists(const std::string& identifier) const;
     VariableType getSymbolType(const std::string& identifier) const;

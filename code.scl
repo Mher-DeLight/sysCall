@@ -1,3 +1,2 @@
-#include <git>
-
-git.log("--oneline");
+#include <printf>
+printf("\"hello\n\"");

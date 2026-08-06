@@ -1,1 +1,1 @@
-git log --oneline
+printf "hello\n"
