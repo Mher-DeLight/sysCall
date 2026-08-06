@@ -140,9 +140,10 @@ std::unique_ptr<FunctionCallStmt> Parser::parseFunctionCallStmt() {
             break;
         }
 
-        eat(TokenType::Comma);
+        eat(TokenType::Comma, "expected comma between function arguments");
     }
 
+    eat(TokenType::Semicolon, "expected semi colon after function call");
     return std::make_unique<FunctionCallStmt>(tkn.location, identifier, std::move(args));
 }
 
