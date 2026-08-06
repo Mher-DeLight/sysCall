@@ -4,14 +4,18 @@ void BashGenerator::load_ast(std::unique_ptr<ScopeBlock> ast__) {
     ast = std::move(ast__);
 }
 void BashGenerator::generate_bash() {
-    bash.push_back("echo hello");
+    bash << "echo hello\n";
 }
-std::vector<std::string> BashGenerator::get_bash() {
-    return bash;
+std::string BashGenerator::get_bash() {
+    return bash.str();
 }
 
 // == VISIT ==
-void BashGenerator::visit(ScopeBlock& node) {}
+void BashGenerator::visit(ScopeBlock& node) {
+    for (auto& child : node.children) {
+        child->accept(*this);
+    }
+}
 void BashGenerator::visit(StringLiteral& node) {}
 void BashGenerator::visit(FloatLiteral& node) {}
 void BashGenerator::visit(IntegerLiteral& node) {}

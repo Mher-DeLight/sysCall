@@ -1,10 +1,12 @@
 #pragma once
 #include "Common.h"
+#include <sstream>
 #include <string>
 
 class BashGenerator : public Visitor {
 private:
-    std::vector<std::string> bash;
+    std::stringstream bash;
+
     std::unique_ptr<ScopeBlock> ast;
 
 public:
@@ -25,5 +27,5 @@ public:
     void visit(VariableReassignment& node) override;
 
     void generate_bash();
-    std::vector<std::string> get_bash();
+    std::string get_bash();
 };
