@@ -1,4 +1,6 @@
 #include "../include/BashGenerator.h"
+#include <cassert>
+#include <iostream>
 
 void BashGenerator::load_ast(std::unique_ptr<ScopeBlock> ast__) {
     ast = std::move(ast__);
@@ -9,34 +11,15 @@ void BashGenerator::generate_bash() {
 std::string BashGenerator::get_bash() {
     return bash.str();
 }
-
-// == VISIT ==
-void BashGenerator::visit(ScopeBlock& node) {
-    for (auto& child : node.children) {
-        child->accept(*this);
+void BashGenerator::genPanic(const std::string& msg, const SourceLocation& src) {
+    if (src.row == -1) {
+        panic("[BASH GENERATOR PANIC] " + msg);
+    } else {
+        panic("[BASH GENERATOR PANIC] " + msg + " [" + std::to_string(src.row) + ":" +
+              std::to_string(src.column) + "]");
     }
 }
-void BashGenerator::visit(StringLiteral& node) {
-    bash << "\\\"" << node.string << "\\\"";
-}
-void BashGenerator::visit(FloatLiteral& node) {
-    bash << node.number;
-}
-void BashGenerator::visit(IntegerLiteral& node) {
-    bash << node.number;
-}
-void BashGenerator::visit(BooleanLiteral& node) {
-    bash << (node.state ? "true" : "false");
-}
-void BashGenerator::visit(VoidLiteral& node) {
-    bash << "\\\"NONE\\\"";
-}
-void BashGenerator::visit(VariableDefinition& node) {
-    bash << node.identifier << "=";
-    node.value->accept(*this);
-    bash << "\n";
-}
-void BashGenerator::visit(BinaryExpression& node) {
+void BashGenerator::numberOperation(BinaryExpression& node) {
     bash << "$(echo \"";
     node.left->accept(*this);
 
@@ -59,10 +42,71 @@ void BashGenerator::visit(BinaryExpression& node) {
     node.right->accept(*this);
     bash << "\" | bc -l)";
 }
+void BashGenerator::stringOperation(BinaryExpression& node) {
+    if (node.op != BinaryOperation::ADD)
+        genPanic("invalid string operation", node.location);
+
+    bash << "\"";
+    node.left->accept(*this);
+    node.right->accept(*this);
+    bash << "\"";
+}
+// == VISIT ==
+void BashGenerator::visit(ScopeBlock& node) {
+    for (auto& child : node.children) {
+        child->accept(*this);
+    }
+}
+void BashGenerator::visit(StringLiteral& node) {
+    bash << node.string;
+}
+void BashGenerator::visit(FloatLiteral& node) {
+    bash << node.number;
+}
+void BashGenerator::visit(IntegerLiteral& node) {
+    bash << node.number;
+}
+void BashGenerator::visit(BooleanLiteral& node) {
+    bash << (node.state ? "true" : "false");
+}
+void BashGenerator::visit(VoidLiteral& node) {
+    bash << "\\\"NONE\\\"";
+}
+void BashGenerator::visit(VariableDefinition& node) {
+    bash << node.identifier << "=";
+    if (node.type == VariableType::STRING)
+        bash << "\"";
+    node.value->accept(*this);
+    if (node.type == VariableType::STRING)
+        bash << "\"";
+    bash << "\n";
+}
+void BashGenerator::visit(BinaryExpression& node) {
+    if (node.return_type == VariableType::INT || node.return_type == VariableType::FLOAT) {
+        numberOperation(node);
+    } else if (node.return_type == VariableType::STRING || node.return_type == VariableType::CHAR) {
+        stringOperation(node);
+    } else {
+        genPanic("invalid binary expression", node.location);
+    }
+}
 void BashGenerator::visit(IfStatement& node) {}
 void BashGenerator::visit(FunctionCallExpr& node) {}
 void BashGenerator::visit(VariableReference& node) {
-    bash << "\"${" << node.identifier << "}\"";
+    switch (node.return_type) {
+        case VariableType::STRING:
+        case VariableType::CHAR:
+            bash << "${" << node.identifier << "}";
+            break;
+
+        case VariableType::INT:
+        case VariableType::FLOAT:
+            bash << "${" << node.identifier << "}";
+            break;
+
+        default:
+            genPanic("unsupported variable type", node.location);
+    }
 }
 void BashGenerator::visit(UnaryExpression& node) {}
 void BashGenerator::visit(VariableReassignment& node) {}

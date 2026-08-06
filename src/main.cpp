@@ -12,6 +12,13 @@ int main() {
     std::ostringstream sstr;
     sstr << fileStream.rdbuf();
 
+    std::ofstream output("../output.sh");
+    if (!output.is_open()) {
+        throw std::runtime_error("couldn't open output file lolze");
+    }
+
     Compiler compiler;
-    compiler.compile(sstr.str());
+    compiler.compile(sstr.str(), output);
+
+    output.close();
 }

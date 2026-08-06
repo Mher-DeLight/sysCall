@@ -150,6 +150,7 @@ public:
 
 class Expression : public ASTNode {
 public:
+    VariableType return_type = VariableType::VOID; // invalid until annotated by the ast
     SourceLocation location;
 
     virtual ~Expression() = default;

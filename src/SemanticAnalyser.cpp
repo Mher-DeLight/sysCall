@@ -21,25 +21,32 @@ void SemanticAnalyser::semaPanic(const std::string& msg, SourceLocation src) {
 }
 ExpressionInfo SemanticAnalyser::analyseExpression(Expression* expr) {
     if (auto lt = dynamic_cast<StringLiteral*>(expr)) {
+        expr->return_type = VariableType::STRING;
         return ExpressionInfo(VariableType::STRING, false, true);
     } else if (auto lt = dynamic_cast<IntegerLiteral*>(expr)) {
+        expr->return_type = VariableType::INT;
         return ExpressionInfo(VariableType::INT, false, true);
     } else if (auto lt = dynamic_cast<FloatLiteral*>(expr)) {
+        expr->return_type = VariableType::FLOAT;
         return ExpressionInfo(VariableType::FLOAT, false, true);
     } else if (auto lt = dynamic_cast<BooleanLiteral*>(expr)) {
+        expr->return_type = VariableType::BOOL;
         return ExpressionInfo(VariableType::BOOL, false, true);
     } else if (auto lt = dynamic_cast<VoidLiteral*>(expr)) {
+        expr->return_type = VariableType::VOID;
         return ExpressionInfo(VariableType::VOID, false, true);
     } else if (auto var = dynamic_cast<VariableReference*>(expr)) {
         const Symbol* symbol = getSymbol(var->identifier);
         if (symbol == nullptr)
             semaPanic("undeclared variable \"" + var->identifier + "\"", var->location);
-        return symbol->type;
+        expr->return_type = symbol->type;
+        return ExpressionInfo(symbol->type, true, false);
     } else if (auto func = dynamic_cast<FunctionCallExpr*>(expr)) {
         const Symbol* symbol = getSymbol(func->identifier);
         if (symbol == nullptr)
             semaPanic("undeclared function \"" + func->identifier + "\"", func->location);
-        return symbol->type;
+        expr->return_type = symbol->type;
+        return ExpressionInfo(symbol->type, false, true);
     } else if (auto bexpr = dynamic_cast<BinaryExpression*>(expr)) {
         auto leftInfo = analyseExpression(bexpr->left.get());
         auto rightInfo = analyseExpression(bexpr->right.get());
@@ -62,7 +69,8 @@ ExpressionInfo SemanticAnalyser::analyseExpression(Expression* expr) {
             semaPanic("invalid operation between types", bexpr->location);
         }
     validOperation:
-        return returnType;
+        expr->return_type = returnType;
+        return ExpressionInfo(returnType, false, true);
     } else {
         semaPanic("invalid expression", expr->location);
     }
@@ -137,6 +145,7 @@ void SemanticAnalyser::visit(IfStatement& node) {
         node.nextStatement->accept(*this);
 }
 void SemanticAnalyser::visit(FunctionCallExpr& node) {
+    analyseExpression(&node);
     for (auto& arg : node.args) {
         arg->accept(*this);
     }
@@ -150,6 +159,7 @@ void SemanticAnalyser::visit(VariableReference& node) {
         semaPanic("\"" + node.identifier + "\" is used as a variable even though it is a function",
                   node.location);
     }
+    analyseExpression(&node);
 }
 void SemanticAnalyser::visit(VariableReassignment& node) {
     if (!symbolExists(node.identifier)) {
@@ -164,6 +174,7 @@ void SemanticAnalyser::visit(VariableReassignment& node) {
 void SemanticAnalyser::visit(VariableDefinition& node) {
     addSymbol(
         Symbol(node.identifier, SymbolKind::Variable, node.type, std::vector<VariableType>()));
+    analyseExpression(node.value.get());
 }
 void SemanticAnalyser::visit(UnaryExpression& node) {
     node.value->accept(*this);

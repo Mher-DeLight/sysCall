@@ -2,7 +2,7 @@
 #include <iostream>
 #include <string>
 
-void Compiler::compile(const std::string& code) {
+void Compiler::compile(const std::string& code, std::ostream& stream) {
     tokenizer.tokenize(code);
     tokenizer.pretty_print(std::cout);
 
@@ -12,8 +12,7 @@ void Compiler::compile(const std::string& code) {
     sema.load_ast(parser.hand_over_AST());
     sema.analyse();
 
-    std::cout << "\n\n== FINAL BASH OUTPUT ==" << std::endl;
     gen.load_ast(sema.hand_over_AST());
     gen.generate_bash();
-    std::cout << gen.get_bash();
+    stream << gen.get_bash();
 }

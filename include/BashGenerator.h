@@ -1,14 +1,18 @@
 #pragma once
 #include "Common.h"
+#include "ErrorHandler.h"
 #include <sstream>
 #include <string>
 
 class BashGenerator : public Visitor {
 private:
+    void genPanic(const std::string& msg, const SourceLocation& src = SourceLocation());
     std::stringstream bash;
 
     std::unique_ptr<ScopeBlock> ast;
     ExpressionInfo analyseExpression(Expression* expr);
+    void numberOperation(BinaryExpression& node);
+    void stringOperation(BinaryExpression& node);
 
 public:
     void load_ast(std::unique_ptr<ScopeBlock> ast__);
