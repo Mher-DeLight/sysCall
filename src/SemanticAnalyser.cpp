@@ -79,6 +79,17 @@ ExpressionInfo SemanticAnalyser::analyseExpression(Expression* expr) {
             semaPanic("invalid operation between types", bexpr->location);
         }
     validOperation:
+        switch (bexpr->op) {
+            case BinaryOperation::GREATER_THAN:
+            case BinaryOperation::GREATER_THAN_OR_EQUAL:
+            case BinaryOperation::LESS_THAN:
+            case BinaryOperation::LESS_THAN_OR_EQUAL:
+                returnType = VariableType::BOOL;
+                break;
+
+            default:
+                break;
+        }
         expr->return_type = returnType;
         return ExpressionInfo(returnType, false, true);
     } else {

@@ -1,4 +1,10 @@
-#include <printf>
+#include <echo>
 
-string a = printf("hello");
-printf(a);
+float x = 3.2;
+
+if (x >= 4) {
+    echo("greater or equal");
+}
+if (x < 4) {
+    echo("less");
+}

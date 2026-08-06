@@ -52,6 +52,30 @@ void BashGenerator::stringOperation(BinaryExpression& node) {
     node.right->accept(*this);
     bash << "\"";
 }
+void BashGenerator::boolOperation(BinaryExpression& node) {
+    bash << "$(echo \"";
+    node.left->accept(*this);
+
+    switch (node.op) {
+        case BinaryOperation::GREATER_THAN:
+            bash << ">";
+            break;
+        case BinaryOperation::GREATER_THAN_OR_EQUAL:
+            bash << ">=";
+            break;
+        case BinaryOperation::LESS_THAN:
+            bash << "<";
+            break;
+        case BinaryOperation::LESS_THAN_OR_EQUAL:
+            bash << "<=";
+            break;
+        default:
+            break;
+    }
+    node.right->accept(*this);
+    bash << "\" | bc -l)";
+}
+
 // == VISIT ==
 void BashGenerator::visit(ScopeBlock& node) {
     for (auto& child : node.children) {
@@ -87,11 +111,19 @@ void BashGenerator::visit(BinaryExpression& node) {
         numberOperation(node);
     } else if (node.return_type == VariableType::STRING || node.return_type == VariableType::CHAR) {
         stringOperation(node);
+    } else if (node.return_type == VariableType::BOOL) {
+        boolOperation(node);
     } else {
         genPanic("invalid binary expression", node.location);
     }
 }
-void BashGenerator::visit(IfStatement& node) {}
+void BashGenerator::visit(IfStatement& node) {
+    bash << "if [[ ";
+    node.condition->accept(*this);
+    bash << " = 1 ]]; then\n";
+    node.block->accept(*this);
+    bash << "fi\n";
+}
 void BashGenerator::visit(FunctionCallExpr& node) {
     bash << "$(";
 
