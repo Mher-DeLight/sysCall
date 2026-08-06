@@ -89,6 +89,12 @@ void Tokenizer::tokenize(const std::string& c) {
         if (current() == ' ') {
             next;
         }
+        if (current() == '/' && peek() == '/') {
+            while (!eof() && (current() != '\n')) {
+                advance();
+            }
+            continue;
+        }
 
         SourceLocation location(row, column);
         if (std::isalpha(current()) || current() == '_') {
