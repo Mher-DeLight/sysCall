@@ -235,6 +235,39 @@ public:
         : ConditionalStatement(lct), condition(std::move(condition_)), block(std::move(block_)),
           nextStatement(std::move(nextStatement_)) {}
 };
+class VariableDefinition : public Statement {
+public:
+    VariableType type;
+    std::string identifier;
+    std::unique_ptr<Expression> value;
+    void accept(Visitor& visitor) override;
+
+    VariableDefinition(SourceLocation& src, VariableType& type_, const std::string& identifier_,
+                       std::unique_ptr<Expression> value_)
+        : Statement(src), type(type_), identifier(identifier_), value(std::move(value_)) {}
+};
+class VariableReassignment : public Statement {
+public:
+    std::string identifier;
+    std::unique_ptr<Expression> value;
+
+    void accept(Visitor& visitor) override;
+
+    VariableReassignment(SourceLocation& src, const std::string& identifier_,
+                         std::unique_ptr<Expression> value_)
+        : Statement(src), identifier(identifier_), value(std::move(value_)) {}
+};
+class FunctionCallStmt : public Statement {
+public:
+    std::string identifier;
+    std::vector<std::unique_ptr<Expression>> args;
+
+    void accept(Visitor& visitor) override;
+
+    FunctionCallStmt(SourceLocation& src, const std::string& identifier_,
+                     std::vector<std::unique_ptr<Expression>> args_)
+        : Statement(src), identifier(identifier_), args(std::move(args_)) {}
+};
 
 class Literal : public Expression {
 public:
@@ -277,28 +310,6 @@ class VoidLiteral : public Literal {
 public:
     void accept(Visitor& visitor) override;
 };
-class VariableDefinition : public Statement {
-public:
-    VariableType type;
-    std::string identifier;
-    std::unique_ptr<Expression> value;
-    void accept(Visitor& visitor) override;
-
-    VariableDefinition(SourceLocation& src, VariableType& type_, const std::string& identifier_,
-                       std::unique_ptr<Expression> value_)
-        : Statement(src), type(type_), identifier(identifier_), value(std::move(value_)) {}
-};
-class VariableReassignment : public Statement {
-public:
-    std::string identifier;
-    std::unique_ptr<Expression> value;
-
-    void accept(Visitor& visitor) override;
-
-    VariableReassignment(SourceLocation& src, const std::string& identifier_,
-                         std::unique_ptr<Expression> value_)
-        : Statement(src), identifier(identifier_), value(std::move(value_)) {}
-};
 
 class Visitor {
 public:
@@ -317,6 +328,7 @@ public:
     virtual void visit(VariableReference& node) = 0;
     virtual void visit(UnaryExpression& node) = 0;
     virtual void visit(VariableReassignment& node) = 0;
+    virtual void visit(FunctionCallStmt& node) = 0;
 };
 class PrettyPrinter : public Visitor {
 private:
@@ -340,6 +352,7 @@ public:
     void visit(VariableReference& node) override;
     void visit(UnaryExpression& node) override;
     void visit(VariableReassignment& node) override;
+    void visit(FunctionCallStmt& node) override;
 };
 
 inline void ScopeBlock::accept(Visitor& visitor) {
@@ -379,5 +392,8 @@ inline void UnaryExpression::accept(Visitor& visitor) {
     visitor.visit(*this);
 }
 inline void VariableReassignment::accept(Visitor& visitor) {
+    visitor.visit(*this);
+}
+inline void FunctionCallStmt::accept(Visitor& visitor) {
     visitor.visit(*this);
 }

@@ -13,7 +13,7 @@ void SemanticAnalyser::analyse() {
     if (std::find(includes.begin(), includes.end(), "echo") != includes.end()) {
         std::vector<VariableType> args;
         args.push_back(VariableType::STRING);
-        addSymbol(Symbol("echo", SymbolKind::Function, VariableType::VOID, args));
+        addSymbol(Symbol("echo", SymbolKind::Function, VariableType::VOID, std::move(args)));
     }
     ast->accept(*this);
     exit_scope();
@@ -153,8 +153,20 @@ void SemanticAnalyser::visit(IfStatement& node) {
         node.nextStatement->accept(*this);
 }
 void SemanticAnalyser::visit(FunctionCallExpr& node) {
-    analyseExpression(&node);
-    for (auto& arg : node.args) {
+    if (!symbolExists(node.identifier)) {
+        semaPanic("cannot reference function \"" + node.identifier + "\"; it does not exist.",
+                  node.location);
+    }
+    if (getSymbol(node.identifier)->kind != SymbolKind::Function) {
+        semaPanic("\"" + node.identifier + "\" is used as a variable even though it is a function",
+                  node.location);
+    }
+
+    auto info = analyseExpression(&node);
+    for (int i = 0; i < node.args.size(); i++) {
+        auto arg = node.args.at(i).get();
+        if (arg->return_type != getSymbol(node.identifier)->parameters[i])
+            semaPanic("argument is not of the requested type", node.args.at(i).get()->location);
         arg->accept(*this);
     }
 }
@@ -164,7 +176,7 @@ void SemanticAnalyser::visit(VariableReference& node) {
                   node.location);
     }
     if (getSymbol(node.identifier)->kind != SymbolKind::Variable) {
-        semaPanic("\"" + node.identifier + "\" is used as a variable even though it is a function",
+        semaPanic("\"" + node.identifier + "\" is used as a function even though it is a variable",
                   node.location);
     }
     analyseExpression(&node);
@@ -193,4 +205,30 @@ void SemanticAnalyser::visit(VariableDefinition& node) {
 }
 void SemanticAnalyser::visit(UnaryExpression& node) {
     node.value->accept(*this);
+}
+void SemanticAnalyser::visit(FunctionCallStmt& node) {
+    if (!symbolExists(node.identifier)) {
+        semaPanic("cannot reference function \"" + node.identifier + "\"; it does not exist.",
+                  node.location);
+    }
+    if (getSymbol(node.identifier)->kind != SymbolKind::Function) {
+        semaPanic("\"" + node.identifier + "\" is used as a variable even though it is a function",
+                  node.location);
+    }
+
+    int paramCount = getSymbol(node.identifier)->parameters.size();
+    for (int i = 0; i < paramCount; i++) {
+        if (node.args.size() <= i) {
+            semaPanic("less arguments than requested");
+        }
+        if (node.args.size() > paramCount) {
+            semaPanic("more arguments than requested");
+        }
+
+        auto arg = node.args.at(i).get();
+        analyseExpression(arg);
+        if (arg->return_type != getSymbol(node.identifier)->parameters[i])
+            semaPanic("argument is not of the requested type", node.args.at(i).get()->location);
+        arg->accept(*this);
+    }
 }

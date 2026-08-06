@@ -105,3 +105,13 @@ void PrettyPrinter::visit(VariableReassignment& node) {
     node.value->accept(*this);
     indent--;
 }
+void PrettyPrinter::visit(FunctionCallStmt& node) {
+    printIndent();
+    stream << "FunctionCallStatement " << node.identifier << "\n";
+
+    indent++;
+    for (auto& arg : node.args) {
+        arg->accept(*this);
+    }
+    indent--;
+}

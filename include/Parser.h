@@ -38,6 +38,7 @@ private:
         std::unique_ptr<FunctionCallExpr> parseFunctionCallExpr();
         
     void parsePreword();
+    std::unique_ptr<FunctionCallStmt> parseFunctionCallStmt();
     std::unique_ptr<VariableDefinition> parseVariableDeclaration();
     std::unique_ptr<VariableReassignment> parseVariableReassignment();
     std::unique_ptr<IfStatement> parseIfStatement();

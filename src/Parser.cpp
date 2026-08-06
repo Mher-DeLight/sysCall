@@ -27,7 +27,11 @@ std::unique_ptr<ScopeBlock> Parser::parseScope(bool require_brackets) {
         } else if (check(TokenType::KeywordIf)) {
             scope->children.push_back(parseIfStatement());
         } else if (check(TokenType::Identifier)) {
-            scope->children.push_back(parseVariableReassignment());
+            if (peek(1).type == TokenType::LParen) {
+                scope->children.push_back(parseFunctionCallStmt());
+            } else {
+                scope->children.push_back(parseVariableReassignment());
+            }
         } else if (check(TokenType::Semicolon)) {
             eat(TokenType::Semicolon, "expected semicolon");
         } else if (check(TokenType::Hashtag)) {
@@ -120,6 +124,26 @@ void Parser::parsePreword() {
         eat(TokenType::Identifier, "expected include name in preword command").lexeme;
     eat(TokenType::GreaterThan, "expected > after include name in preword");
     includes.push_back(includeName);
+}
+std::unique_ptr<FunctionCallStmt> Parser::parseFunctionCallStmt() {
+    Token tkn = eat(TokenType::Identifier, "expected identifier for function call");
+    std::string identifier = tkn.lexeme;
+    eat(TokenType::LParen, "expected '(' after identifier for function call");
+    std::vector<std::unique_ptr<Expression>> args;
+
+    while (!isEnd() && !match(TokenType::RParen)) {
+        args.push_back(parseExpression());
+        if (match(TokenType::RParen))
+            break;
+        if (isEnd()) {
+            parserPanic("unexpected eof token before closing parenthesis of function call");
+            break;
+        }
+
+        eat(TokenType::Comma);
+    }
+
+    return std::make_unique<FunctionCallStmt>(tkn.location, identifier, std::move(args));
 }
 
 // == EXPRESSION PARSERS ==

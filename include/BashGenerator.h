@@ -30,6 +30,7 @@ public:
     void visit(VariableReference& node) override;
     void visit(UnaryExpression& node) override;
     void visit(VariableReassignment& node) override;
+    void visit(FunctionCallStmt& node) override;
 
     void generate_bash();
     std::string get_bash();

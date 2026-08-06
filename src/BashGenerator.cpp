@@ -110,3 +110,4 @@ void BashGenerator::visit(VariableReference& node) {
 }
 void BashGenerator::visit(UnaryExpression& node) {}
 void BashGenerator::visit(VariableReassignment& node) {}
+void BashGenerator::visit(FunctionCallStmt& node) {}
