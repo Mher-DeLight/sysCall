@@ -27,7 +27,7 @@ std::unique_ptr<ScopeBlock> Parser::parseScope(bool require_brackets) {
         } else if (check(TokenType::KeywordIf)) {
             scope->children.push_back(parseIfStatement());
         } else if (check(TokenType::Identifier)) {
-            if (peek(1).type == TokenType::LParen) {
+            if (peek(1).type == TokenType::LParen || peek(1).type == TokenType::Period) {
                 scope->children.push_back(parseFunctionCallStmt());
             } else {
                 scope->children.push_back(parseVariableReassignment());
@@ -128,6 +128,13 @@ void Parser::parsePreword() {
 std::unique_ptr<FunctionCallStmt> Parser::parseFunctionCallStmt() {
     Token tkn = eat(TokenType::Identifier, "expected identifier for function call");
     std::string identifier = tkn.lexeme;
+
+    while (match(TokenType::Period)) {
+        identifier += ".";
+        identifier +=
+            eat(TokenType::Identifier, "expected identifier continuation after period").lexeme;
+    }
+
     eat(TokenType::LParen, "expected '(' after identifier for function call");
     std::vector<std::unique_ptr<Expression>> args;
 

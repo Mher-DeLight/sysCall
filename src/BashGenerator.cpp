@@ -112,7 +112,12 @@ void BashGenerator::visit(VariableReference& node) {
 void BashGenerator::visit(UnaryExpression& node) {}
 void BashGenerator::visit(VariableReassignment& node) {}
 void BashGenerator::visit(FunctionCallStmt& node) {
-    if (std::find(includes.begin(), includes.end(), node.identifier) != includes.end()) {
+    size_t pos = node.identifier.find('.');
+    std::string first =
+        (pos == std::string::npos) ? node.identifier : node.identifier.substr(0, pos);
+
+    if (std::find(includes.begin(), includes.end(), first) != includes.end()) {
+        std::replace(node.identifier.begin(), node.identifier.end(), '.', ' ');
         bash << node.identifier << " ";
         bash << dynamic_cast<StringLiteral*>(node.args.at(0).get())->string;
     }

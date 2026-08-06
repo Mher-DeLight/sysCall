@@ -1,4 +1,5 @@
 #include "../include/sysCall.h"
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -21,4 +22,7 @@ int main() {
     compiler.compile(sstr.str(), output);
 
     output.close();
+
+    int result = system("bash ../output.sh");
+    return result;
 }

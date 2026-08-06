@@ -128,7 +128,9 @@ const std::unordered_map<std::string, TokenType> word_table{{{"", TokenType::Non
                                                              {">=", TokenType::GreaterEqual},
                                                              {"<=", TokenType::LessEqual},
                                                              {",", TokenType::Comma},
-                                                             {"#", TokenType::Hashtag}}};
+                                                             {"#", TokenType::Hashtag},
+                                                             {".", TokenType::Period},
+                                                             {",", TokenType::Comma}}};
 
 struct ExpressionInfo {
     VariableType type;

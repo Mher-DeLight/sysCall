@@ -87,7 +87,10 @@ ExpressionInfo SemanticAnalyser::analyseExpression(Expression* expr) {
     return ExpressionInfo(VariableType::VOID);
 }
 bool SemanticAnalyser::commandExists(const std::string& cmd) {
-    std::string command = "command -v " + cmd + " >/dev/null 2>&1";
+    size_t pos = cmd.find('.');
+    std::string first = (pos == std::string::npos) ? cmd : cmd.substr(0, pos);
+
+    std::string command = "command -v " + first + " >/dev/null 2>&1";
     return std::system(command.c_str()) == 0;
 }
 
@@ -213,6 +216,10 @@ void SemanticAnalyser::visit(UnaryExpression& node) {
     node.value->accept(*this);
 }
 void SemanticAnalyser::visit(FunctionCallStmt& node) {
+    if (commandExists(node.identifier)) {
+        addSymbol(Symbol(node.identifier, SymbolKind::Function, VariableType::VOID,
+                         std::vector<VariableType>{VariableType::STRING}));
+    }
     if (!symbolExists(node.identifier)) {
         semaPanic("cannot reference function \"" + node.identifier + "\"; it does not exist.",
                   node.location);
