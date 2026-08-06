@@ -1,4 +1,5 @@
 #include "../include/BashGenerator.h"
+#include <algorithm>
 #include <cassert>
 #include <iostream>
 
@@ -111,14 +112,8 @@ void BashGenerator::visit(VariableReference& node) {
 void BashGenerator::visit(UnaryExpression& node) {}
 void BashGenerator::visit(VariableReassignment& node) {}
 void BashGenerator::visit(FunctionCallStmt& node) {
-    if (node.identifier == "echo") {
-        include_echo(node);
+    if (std::find(includes.begin(), includes.end(), node.identifier) != includes.end()) {
+        bash << node.identifier << " ";
+        bash << dynamic_cast<StringLiteral*>(node.args.at(0).get())->string;
     }
-}
-
-// == INCLUDES ==
-void BashGenerator::include_echo(FunctionCallStmt& node) {
-    bash << "echo \"";
-    node.args.at(0)->accept(*this);
-    bash << "\"";
 }

@@ -13,7 +13,6 @@ private:
     ExpressionInfo analyseExpression(Expression* expr);
     void numberOperation(BinaryExpression& node);
     void stringOperation(BinaryExpression& node);
-    void include_echo(FunctionCallStmt& node);
 
 public:
     void load_ast(std::unique_ptr<ScopeBlock> ast__);

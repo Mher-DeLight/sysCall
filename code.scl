@@ -1,4 +1,3 @@
-#include <echo>
+#include <git>
 
-string a = "hello";
-echo(a);
+git("--version")

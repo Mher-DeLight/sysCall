@@ -1,6 +1,7 @@
 #include "../include/SemanticAnalyser.h"
 #include "../include/ErrorHandler.h"
 #include <algorithm>
+#include <iostream>
 
 std::unique_ptr<ScopeBlock> SemanticAnalyser::hand_over_AST() {
     return std::move(ast);
@@ -10,11 +11,12 @@ void SemanticAnalyser::load_ast(uq<ScopeBlock> ast_) {
 }
 void SemanticAnalyser::analyse() {
     enter_scope();
-    if (std::find(includes.begin(), includes.end(), "echo") != includes.end()) {
-        std::vector<VariableType> args;
-        args.push_back(VariableType::STRING);
-        addSymbol(Symbol("echo", SymbolKind::Function, VariableType::VOID, std::move(args)));
+
+    for (auto& inc : includes) {
+        addSymbol(Symbol(inc, SymbolKind::Function, VariableType::VOID,
+                         std::vector<VariableType>{VariableType::STRING}));
     }
+
     ast->accept(*this);
     exit_scope();
 }
@@ -83,6 +85,10 @@ ExpressionInfo SemanticAnalyser::analyseExpression(Expression* expr) {
         semaPanic("invalid expression", expr->location);
     }
     return ExpressionInfo(VariableType::VOID);
+}
+bool SemanticAnalyser::commandExists(const std::string& cmd) {
+    std::string command = "command -v " + cmd + " >/dev/null 2>&1";
+    return std::system(command.c_str()) == 0;
 }
 
 void SemanticAnalyser::enter_scope() {
