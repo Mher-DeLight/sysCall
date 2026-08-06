@@ -7,6 +7,13 @@ void BashGenerator::load_ast(std::unique_ptr<ScopeBlock> ast__) {
     ast = std::move(ast__);
 }
 void BashGenerator::generate_bash() {
+    bash << "#!/bin/bash\n";
+    bash << "# This is an auto-generated Bash file. Some sections may appear cryptic while others "
+            "may be verbose.\n";
+    bash << "# Some elements may also not be stylized or formatted for readability.\n";
+    bash << "# If present, it is better to read the .scl file that generated this script, as it "
+            "would be more readable.\n";
+    bash << "# Generated with sysCall. https://www.github.com/Mher-DeLight/SysCAll\n\n";
     ast->accept(*this);
 }
 std::string BashGenerator::get_bash() {
@@ -157,7 +164,15 @@ void BashGenerator::visit(VariableReference& node) {
     }
 }
 void BashGenerator::visit(UnaryExpression& node) {}
-void BashGenerator::visit(VariableReassignment& node) {}
+void BashGenerator::visit(VariableReassignment& node) {
+    bash << node.identifier << "=";
+    if (node.value->return_type == VariableType::STRING)
+        bash << "\"";
+    node.value->accept(*this);
+    if (node.value->return_type == VariableType::STRING)
+        bash << "\"";
+    bash << "\n";
+}
 void BashGenerator::visit(FunctionCallStmt& node) {
     size_t pos = node.identifier.find('.');
     std::string first =
