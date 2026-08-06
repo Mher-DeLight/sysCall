@@ -48,7 +48,8 @@ void PrettyPrinter::visit(IfStatement& node) {
     indent++;
     node.condition->accept(*this);
     node.block->accept(*this);
-    node.nextStatement->accept(*this);
+    if (node.nextStatement != nullptr)
+        node.nextStatement->accept(*this);
 }
 void PrettyPrinter::visit(FunctionCallExpr& node) {
     printIndent();

@@ -11,14 +11,14 @@
     advance();                                                                                     \
     continue
 
-void Tokenizer::advance() {
+void Tokenizer::advance(int amount) {
     if (peek() == '\n') {
         column = 1;
-        row++;
+        row += amount;
     } else {
-        column++;
+        column += amount;
     }
-    cursor++;
+    cursor += amount;
 }
 char Tokenizer::peek(int offset) const {
     if (!is_valid_position(cursor + offset))
@@ -44,20 +44,16 @@ bool Tokenizer::eof() {
     return cursor >= code.size();
 }
 bool Tokenizer::is_identifier(const std::string& str) {
-    auto it = std::find_if(word_table.begin(), word_table.end(),
-                           [&str](const auto& p) { return p.first == str; });
-    return it == word_table.end();
+    return !word_table.contains(str);
 }
 TokenType Tokenizer::get_word_type(const std::string& str, bool allow_identifiers) {
-    auto it = std::find_if(word_table.begin(), word_table.end(),
-                           [&str](const auto& p) { return p.first == str; });
-    if (it == word_table.end()) {
+    if (word_table.contains(str)) {
+        return word_table.at(str);
+    } else {
         if (allow_identifiers)
             return TokenType::Identifier;
         else
             return TokenType::None;
-    } else {
-        return it->second;
     }
     return TokenType::None;
 }
@@ -115,6 +111,17 @@ void Tokenizer::tokenize(const std::string& c) {
                 advance();
             }
 
+            while (!str.empty()) {
+                if (word_table.contains(str))
+                    break;
+
+                advance(-1);
+                str.pop_back();
+            }
+
+            if (!word_table.contains(str))
+                panic("invalid character string \"" + str + "\"");
+
             token(get_word_type(str, false), str, location);
             continue;
         } else if (std::isdigit(current())) {
@@ -132,6 +139,7 @@ void Tokenizer::tokenize(const std::string& c) {
 
             token(found_dot ? TokenType::FloatLiteral : TokenType::IntegerLiteral, str, location);
             continue;
+
         } else if (current() == '\"') {
             std::string str;
             advance();

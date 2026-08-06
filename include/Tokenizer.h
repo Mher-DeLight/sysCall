@@ -27,7 +27,7 @@ private:
     void assert_validity(const int pos, const std::string& error_message = "") const;
     bool is_identifier(const std::string& str);
     bool eof();
-    void advance();
+    void advance(int amount = 1);
     char peek(int offset = 1) const;
     void token(const TokenType type, const std::string& lexeme_ = "",
                SourceLocation src = SourceLocation());

@@ -2,6 +2,7 @@
 #include <array>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 enum class VariableType { INT, FLOAT, STRING, CHAR, BOOL, VOID };
 
@@ -33,6 +34,9 @@ enum class TokenType {
     RParen,
     LBrace,
     RBrace,
+
+    Comma,
+    Period,
 
     Colon,
     Semicolon,
@@ -87,36 +91,36 @@ public:
     SourceLocation() = default;
 };
 
-const std::array<std::pair<std::string, TokenType>, 26> word_table{
-    {{"", TokenType::None},
-     {"if", TokenType::KeywordIf},
-     {"else", TokenType::KeywordElse},
-     {"int", TokenType::KeywordVartype},
-     {"float", TokenType::KeywordVartype},
-     {"string", TokenType::KeywordVartype},
+const std::unordered_map<std::string, TokenType> word_table{{{"", TokenType::None},
+                                                             {"if", TokenType::KeywordIf},
+                                                             {"else", TokenType::KeywordElse},
+                                                             {"int", TokenType::KeywordVartype},
+                                                             {"float", TokenType::KeywordVartype},
+                                                             {"string", TokenType::KeywordVartype},
 
-     {"+", TokenType::Plus},
-     {"-", TokenType::Minus},
-     {"*", TokenType::Star},
-     {"/", TokenType::Slash},
+                                                             {"+", TokenType::Plus},
+                                                             {"-", TokenType::Minus},
+                                                             {"*", TokenType::Star},
+                                                             {"/", TokenType::Slash},
 
-     {"=", TokenType::Equal},
-     {"==", TokenType::EqualEqual},
-     {"!=", TokenType::NotEqual},
+                                                             {"=", TokenType::Equal},
+                                                             {"==", TokenType::EqualEqual},
+                                                             {"!=", TokenType::NotEqual},
 
-     {"(", TokenType::LParen},
-     {")", TokenType::RParen},
-     {"{", TokenType::LBrace},
-     {"}", TokenType::RBrace},
-     {"&", TokenType::Ampersand},
-     {":", TokenType::Colon},
-     {";", TokenType::Semicolon},
-     {"->", TokenType::Arrow},
-     {"!", TokenType::Exclamation},
-     {">", TokenType::GreaterThan},
-     {"<", TokenType::LessThan},
-     {">=", TokenType::GreaterEqual},
-     {"<=", TokenType::LessEqual}}};
+                                                             {"(", TokenType::LParen},
+                                                             {")", TokenType::RParen},
+                                                             {"{", TokenType::LBrace},
+                                                             {"}", TokenType::RBrace},
+                                                             {"&", TokenType::Ampersand},
+                                                             {":", TokenType::Colon},
+                                                             {";", TokenType::Semicolon},
+                                                             {"->", TokenType::Arrow},
+                                                             {"!", TokenType::Exclamation},
+                                                             {">", TokenType::GreaterThan},
+                                                             {"<", TokenType::LessThan},
+                                                             {">=", TokenType::GreaterEqual},
+                                                             {"<=", TokenType::LessEqual},
+                                                             {",", TokenType::Comma}}};
 
 class Visitor;
 class PrettyPrinter;

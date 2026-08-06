@@ -73,7 +73,26 @@ std::unique_ptr<IfStatement> Parser::parseIfStatement() {
 
     return std::make_unique<IfStatement>(lct, std::move(condition), std::move(scope), nullptr);
 }
-std::unique_ptr<FunctionCallExpr> Parser::parseFunctionCallExpr() {}
+std::unique_ptr<FunctionCallExpr> Parser::parseFunctionCallExpr() {
+    Token tkn = eat(TokenType::Identifier, "expected identifier for function call");
+    std::string identifier = tkn.lexeme;
+    eat(TokenType::LParen, "expected '(' after identifier for function call");
+    std::vector<std::unique_ptr<Expression>> args;
+
+    while (!isEnd() && !match(TokenType::RParen)) {
+        args.push_back(parseExpression());
+        if (match(TokenType::RParen))
+            break;
+        if (isEnd()) {
+            parserPanic("unexpected eof token before closing parenthesis of function call");
+            break;
+        }
+
+        eat(TokenType::Comma);
+    }
+
+    return std::make_unique<FunctionCallExpr>(tkn.location, identifier, std::move(args));
+}
 
 // == EXPRESSION PARSERS ==
 
@@ -206,7 +225,7 @@ std::unique_ptr<Expression> Parser::parseFactor() {
     } else if (check(TokenType::Identifier)) {
         std::string identifier = eat(TokenType::Identifier, "expected identifier").lexeme;
         if (match(TokenType::LParen)) {
-            advance(-1);
+            advance(-2);
             return parseFunctionCallExpr();
         }
         return std::make_unique<VariableReference>(tkn.location, identifier);
@@ -293,10 +312,15 @@ bool Parser::check(TokenType type) {
     return false;
 }
 void Parser::advance(int offset) {
-    if (++cursor > tokens.size()) {
-        parserPanic("cannot advance to position " + std::to_string(cursor) +
+    if ((cursor + offset > tokens.size()) && offset > 0) {
+        parserPanic("cannot advance to position " + std::to_string(cursor + offset) +
                     "; position is out of bounds.");
     }
+    if ((cursor + offset < 0) && offset < 0) {
+        parserPanic("cannot advance to position " + std::to_string(cursor + offset) +
+                    "; position is out of bounds.");
+    }
+    cursor += offset;
 }
 Token Parser::eat(TokenType type, const std::string& msg) {
     if (!check(type))
