@@ -4,7 +4,7 @@ void BashGenerator::load_ast(std::unique_ptr<ScopeBlock> ast__) {
     ast = std::move(ast__);
 }
 void BashGenerator::generate_bash() {
-    bash << "echo hello\n";
+    ast->accept(*this);
 }
 std::string BashGenerator::get_bash() {
     return bash.str();
@@ -16,12 +16,26 @@ void BashGenerator::visit(ScopeBlock& node) {
         child->accept(*this);
     }
 }
-void BashGenerator::visit(StringLiteral& node) {}
-void BashGenerator::visit(FloatLiteral& node) {}
-void BashGenerator::visit(IntegerLiteral& node) {}
-void BashGenerator::visit(BooleanLiteral& node) {}
-void BashGenerator::visit(VoidLiteral& node) {}
-void BashGenerator::visit(VariableDefinition& node) {}
+void BashGenerator::visit(StringLiteral& node) {
+    bash << "\"" << node.string << "\"";
+}
+void BashGenerator::visit(FloatLiteral& node) {
+    bash << node.number;
+}
+void BashGenerator::visit(IntegerLiteral& node) {
+    bash << node.number;
+}
+void BashGenerator::visit(BooleanLiteral& node) {
+    bash << (node.state ? "true" : "false");
+}
+void BashGenerator::visit(VoidLiteral& node) {
+    bash << "\"NONE\"";
+}
+void BashGenerator::visit(VariableDefinition& node) {
+    bash << node.identifier << "=";
+    node.value->accept(*this);
+    bash << "\n";
+}
 void BashGenerator::visit(BinaryExpression& node) {}
 void BashGenerator::visit(IfStatement& node) {}
 void BashGenerator::visit(FunctionCallExpr& node) {}

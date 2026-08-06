@@ -1,4 +1,3 @@
-int y = 3;
-if (y > 3) {
-  y = 4;
-}
+int a = 3;
+int b = 1.2;
+int c = "hello";

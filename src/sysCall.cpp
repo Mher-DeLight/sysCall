@@ -13,7 +13,7 @@ void Compiler::compile(const std::string& code) {
     sema.analyse();
 
     std::cout << "\n\n== FINAL BASH OUTPUT ==" << std::endl;
-    gen.load_ast(parser.hand_over_AST());
+    gen.load_ast(sema.hand_over_AST());
     gen.generate_bash();
     std::cout << gen.get_bash();
 }
