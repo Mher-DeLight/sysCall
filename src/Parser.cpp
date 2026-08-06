@@ -7,6 +7,9 @@
 void Parser::load_tokens(std::vector<Token> tkns) {
     tokens = std::move(tkns);
 }
+std::unique_ptr<ScopeBlock> Parser::hand_over_AST() {
+    return std::move(entry_point);
+}
 
 void Parser::parse() {
     cursor = 0;

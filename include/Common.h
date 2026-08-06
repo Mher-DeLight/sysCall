@@ -300,7 +300,6 @@ public:
     virtual void visit(UnaryExpression& node) = 0;
     virtual void visit(VariableReassignment& node) = 0;
 };
-
 class PrettyPrinter : public Visitor {
 private:
     int indent = 0;

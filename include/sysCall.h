@@ -1,5 +1,6 @@
 #pragma once
 #include "Parser.h"
+#include "SemanticAnalyser.h"
 #include "Tokenizer.h"
 #include <string>
 #include <vector>
@@ -8,6 +9,7 @@ class Compiler {
 private:
     Tokenizer tokenizer;
     Parser parser;
+    SemanticAnalyser sema;
 
 public:
     void compile(const std::string& code);

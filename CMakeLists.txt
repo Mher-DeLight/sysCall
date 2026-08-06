@@ -16,6 +16,7 @@ add_executable(sysCall
         src/Tokenizer.cpp
         src/Parser.cpp
         src/Visitor.cpp
+        src/SemanticAnalyser.cpp
 )
 target_include_directories(sysCall
     PRIVATE
