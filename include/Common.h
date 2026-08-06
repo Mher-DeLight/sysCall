@@ -270,6 +270,17 @@ public:
                        std::unique_ptr<Expression> value_)
         : Statement(src), type(type_), identifier(identifier_), value(std::move(value_)) {}
 };
+class VariableReassignment : public Statement {
+public:
+    std::string identifier;
+    std::unique_ptr<Expression> value;
+
+    void accept(Visitor& visitor) override;
+
+    VariableReassignment(SourceLocation& src, const std::string& identifier_,
+                         std::unique_ptr<Expression> value_)
+        : Statement(src), identifier(identifier_), value(std::move(value_)) {}
+};
 
 class Visitor {
 public:
@@ -287,6 +298,7 @@ public:
     virtual void visit(FunctionCallExpr& node) = 0;
     virtual void visit(VariableReference& node) = 0;
     virtual void visit(UnaryExpression& node) = 0;
+    virtual void visit(VariableReassignment& node) = 0;
 };
 
 class PrettyPrinter : public Visitor {
@@ -310,6 +322,7 @@ public:
     void visit(FunctionCallExpr& node) override;
     void visit(VariableReference& node) override;
     void visit(UnaryExpression& node) override;
+    void visit(VariableReassignment& node) override;
 };
 
 inline void ScopeBlock::accept(Visitor& visitor) {
@@ -346,5 +359,8 @@ inline void VariableReference::accept(Visitor& visitor) {
     visitor.visit(*this);
 }
 inline void UnaryExpression::accept(Visitor& visitor) {
+    visitor.visit(*this);
+}
+inline void VariableReassignment::accept(Visitor& visitor) {
     visitor.visit(*this);
 }

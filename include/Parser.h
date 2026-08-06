@@ -20,8 +20,6 @@ private:
     void advance(int offset = 1);
     void parserPanic(const std::string& msg, const SourceLocation& location = SourceLocation());
 
-    std::unique_ptr<VariableDefinition> parseVariableDeclaration();
-
     // clang-format off
     std::unique_ptr<Expression> parseExpression();
         std::unique_ptr<Expression> parseLogicalOr();
@@ -38,7 +36,9 @@ private:
             std::unique_ptr<StringLiteral> parseString();
 
         std::unique_ptr<FunctionCallExpr> parseFunctionCallExpr();
-
+        
+    std::unique_ptr<VariableDefinition> parseVariableDeclaration();
+    std::unique_ptr<VariableReassignment> parseVariableReassignment();
     std::unique_ptr<IfStatement> parseIfStatement();
     std::unique_ptr<ScopeBlock> parseScope(bool require_brackets = true);
 

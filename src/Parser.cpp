@@ -26,6 +26,12 @@ std::unique_ptr<ScopeBlock> Parser::parseScope(bool require_brackets) {
             scope->children.push_back(parseVariableDeclaration());
         } else if (check(TokenType::KeywordIf)) {
             scope->children.push_back(parseIfStatement());
+        } else if (check(TokenType::Identifier)) {
+            scope->children.push_back(parseVariableReassignment());
+        } else if (check(TokenType::Semicolon)) {
+            eat(TokenType::Semicolon, "expected semicolon");
+        } else {
+            parserPanic("invaid token \"" + peek().lexeme + "\"", peek().location);
         }
 
         if (match(TokenType::EndOfFile))
@@ -57,7 +63,7 @@ std::unique_ptr<VariableDefinition> Parser::parseVariableDeclaration() {
 
     eat(TokenType::Equal);
 
-    std::unique_ptr<Expression> value = parseAddition();
+    std::unique_ptr<Expression> value = parseExpression();
     eat(TokenType::Semicolon);
 
     return std::make_unique<VariableDefinition>(tkn.location, type, identifier, std::move(value));
@@ -92,6 +98,17 @@ std::unique_ptr<FunctionCallExpr> Parser::parseFunctionCallExpr() {
     }
 
     return std::make_unique<FunctionCallExpr>(tkn.location, identifier, std::move(args));
+}
+std::unique_ptr<VariableReassignment> Parser::parseVariableReassignment() {
+    Token tkn = eat(TokenType::Identifier, "expected identifier for variable reassignment");
+    std::string identifier = tkn.lexeme;
+
+    eat(TokenType::Equal);
+    std::unique_ptr<VariableReassignment> ptr =
+        std::make_unique<VariableReassignment>(tkn.location, identifier, parseExpression());
+
+    eat(TokenType::Semicolon);
+    return std::move(ptr);
 }
 
 // == EXPRESSION PARSERS ==

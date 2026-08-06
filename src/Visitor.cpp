@@ -3,7 +3,11 @@
 
 void PrettyPrinter::printIndent() {
     for (int i = 0; i < indent; i++) {
-        stream << "    ";
+        if (i == indent - 1) {
+            stream << "├────";
+        } else {
+            stream << "│    ";
+        }
     }
 }
 void PrettyPrinter::visit(ScopeBlock& node) {
@@ -89,6 +93,14 @@ void PrettyPrinter::visit(UnaryExpression& node) {
     printIndent();
 
     stream << "UnaryExpression " << (int)node.op;
+    indent++;
+    node.value->accept(*this);
+    indent--;
+}
+void PrettyPrinter::visit(VariableReassignment& node) {
+    printIndent();
+    stream << "VariableReassignment " << node.identifier << "\n";
+
     indent++;
     node.value->accept(*this);
     indent--;
