@@ -170,11 +170,18 @@ void SemanticAnalyser::visit(VariableReassignment& node) {
         semaPanic("\"" + node.identifier + "\" is used as a variable even though it is a function",
                   node.location);
     }
+
+    if (getSymbolType(node.identifier) != analyseExpression(node.value.get()).type) {
+        semaPanic("reassignment type does not match variable type", node.location);
+    }
 }
 void SemanticAnalyser::visit(VariableDefinition& node) {
     addSymbol(
         Symbol(node.identifier, SymbolKind::Variable, node.type, std::vector<VariableType>()));
-    analyseExpression(node.value.get());
+    ExpressionInfo info = analyseExpression(node.value.get());
+    if (node.type != info.type) {
+        semaPanic("variable type does not match assigned value", node.location);
+    }
 }
 void SemanticAnalyser::visit(UnaryExpression& node) {
     node.value->accept(*this);
