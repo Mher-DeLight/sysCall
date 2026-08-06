@@ -63,6 +63,7 @@ public:
     void visit(UnaryExpression& node) override;
     void visit(VariableReassignment& node) override;
 
+    std::unique_ptr<ScopeBlock> hand_over_AST();
     void load_ast(uq<ScopeBlock> ast_);
     void analyse();
 };

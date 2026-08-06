@@ -1,6 +1,9 @@
 #include "../include/SemanticAnalyser.h"
 #include "../include/ErrorHandler.h"
 
+std::unique_ptr<ScopeBlock> SemanticAnalyser::hand_over_AST() {
+    return std::move(ast);
+}
 void SemanticAnalyser::load_ast(uq<ScopeBlock> ast_) {
     ast = std::move(ast_);
 }

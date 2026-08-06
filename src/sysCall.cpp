@@ -11,4 +11,11 @@ void Compiler::compile(const std::string& code) {
 
     sema.load_ast(parser.hand_over_AST());
     sema.analyse();
+
+    std::cout << "\n\n== FINAL BASH OUTPUT ==" << std::endl;
+    gen.load_ast(parser.hand_over_AST());
+    gen.generate_bash();
+    for (auto& cmd : gen.get_bash()) {
+        std::cout << cmd << std::endl;
+    }
 }
