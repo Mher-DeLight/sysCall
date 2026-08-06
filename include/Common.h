@@ -4,6 +4,9 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+extern std::vector<std::string> includes;
+
 enum class VariableType { INT, FLOAT, STRING, CHAR, BOOL, VOID };
 
 enum class TokenType {
@@ -46,10 +49,13 @@ enum class TokenType {
     StraightLine,
     DoubleStraightLine,
     Exclamation,
+    Hashtag,
 
     KeywordIf,
     KeywordElse,
     KeywordVartype,
+
+    PrewordInclude,
 
     EndOfFile
 };
@@ -97,6 +103,7 @@ const std::unordered_map<std::string, TokenType> word_table{{{"", TokenType::Non
                                                              {"int", TokenType::KeywordVartype},
                                                              {"float", TokenType::KeywordVartype},
                                                              {"string", TokenType::KeywordVartype},
+                                                             {"include", TokenType::PrewordInclude},
 
                                                              {"+", TokenType::Plus},
                                                              {"-", TokenType::Minus},
@@ -120,7 +127,8 @@ const std::unordered_map<std::string, TokenType> word_table{{{"", TokenType::Non
                                                              {"<", TokenType::LessThan},
                                                              {">=", TokenType::GreaterEqual},
                                                              {"<=", TokenType::LessEqual},
-                                                             {",", TokenType::Comma}}};
+                                                             {",", TokenType::Comma},
+                                                             {"#", TokenType::Hashtag}}};
 
 struct ExpressionInfo {
     VariableType type;

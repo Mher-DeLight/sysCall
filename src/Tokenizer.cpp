@@ -10,6 +10,7 @@
 #define next                                                                                       \
     advance();                                                                                     \
     continue
+std::vector<std::string> includes;
 
 void Tokenizer::advance(int amount) {
     if (peek() == '\n') {
@@ -70,7 +71,7 @@ void Tokenizer::pretty_print(std::ostream& os) {
     }
 }
 bool Tokenizer::is_character(const char c) {
-    return (std::string_view(".,:;-><+-/=!&*(){}[]").find(c) != std::string_view::npos);
+    return (std::string_view(".,:;-><+-/=!&*(){}[]#").find(c) != std::string_view::npos);
 }
 
 void Tokenizer::tokenize(const std::string& c) {

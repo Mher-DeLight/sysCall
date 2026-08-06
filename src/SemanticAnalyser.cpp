@@ -1,5 +1,6 @@
 #include "../include/SemanticAnalyser.h"
 #include "../include/ErrorHandler.h"
+#include <algorithm>
 
 std::unique_ptr<ScopeBlock> SemanticAnalyser::hand_over_AST() {
     return std::move(ast);
@@ -8,7 +9,14 @@ void SemanticAnalyser::load_ast(uq<ScopeBlock> ast_) {
     ast = std::move(ast_);
 }
 void SemanticAnalyser::analyse() {
+    enter_scope();
+    if (std::find(includes.begin(), includes.end(), "echo") != includes.end()) {
+        std::vector<VariableType> args;
+        args.push_back(VariableType::STRING);
+        addSymbol(Symbol("echo", SymbolKind::Function, VariableType::VOID, args));
+    }
     ast->accept(*this);
+    exit_scope();
 }
 void SemanticAnalyser::semaPanic(const std::string& msg, SourceLocation src) {
     if (src.row == -1) {

@@ -14,9 +14,6 @@ std::unique_ptr<ScopeBlock> Parser::hand_over_AST() {
 void Parser::parse() {
     cursor = 0;
     entry_point = parseScope(false);
-
-    PrettyPrinter p(std::cout);
-    p.visit(*entry_point);
 }
 std::unique_ptr<ScopeBlock> Parser::parseScope(bool require_brackets) {
     std::unique_ptr<ScopeBlock> scope = std::make_unique<ScopeBlock>();
@@ -33,8 +30,10 @@ std::unique_ptr<ScopeBlock> Parser::parseScope(bool require_brackets) {
             scope->children.push_back(parseVariableReassignment());
         } else if (check(TokenType::Semicolon)) {
             eat(TokenType::Semicolon, "expected semicolon");
+        } else if (check(TokenType::Hashtag)) {
+            parsePreword();
         } else {
-            parserPanic("invaid token \"" + peek().lexeme + "\"", peek().location);
+            parserPanic("invalid token \"" + peek().lexeme + "\"", peek().location);
         }
 
         if (match(TokenType::EndOfFile))
@@ -106,12 +105,21 @@ std::unique_ptr<VariableReassignment> Parser::parseVariableReassignment() {
     Token tkn = eat(TokenType::Identifier, "expected identifier for variable reassignment");
     std::string identifier = tkn.lexeme;
 
-    eat(TokenType::Equal);
+    eat(TokenType::Equal, "expected equal sign after identifier in variable reassignment");
     std::unique_ptr<VariableReassignment> ptr =
         std::make_unique<VariableReassignment>(tkn.location, identifier, parseExpression());
 
-    eat(TokenType::Semicolon);
+    eat(TokenType::Semicolon, "expected semicolon after statement");
     return std::move(ptr);
+}
+void Parser::parsePreword() {
+    eat(TokenType::Hashtag, "expected hashtag for preword");
+    eat(TokenType::PrewordInclude, "expected include for preword");
+    eat(TokenType::LessThan, "expected < before include name for preword");
+    std::string includeName =
+        eat(TokenType::Identifier, "expected include name in preword command").lexeme;
+    eat(TokenType::GreaterThan, "expected > after include name in preword");
+    includes.push_back(includeName);
 }
 
 // == EXPRESSION PARSERS ==

@@ -1,3 +1,5 @@
+#include <echo>
+
 string a = "a";
 string b = "b";
 string c = a + b;

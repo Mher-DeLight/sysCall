@@ -4,7 +4,6 @@
 
 void Compiler::compile(const std::string& code, std::ostream& stream) {
     tokenizer.tokenize(code);
-    tokenizer.pretty_print(std::cout);
 
     parser.load_tokens(std::move(tokenizer.get_tokens()));
     parser.parse();
