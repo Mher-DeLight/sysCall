@@ -110,4 +110,15 @@ void BashGenerator::visit(VariableReference& node) {
 }
 void BashGenerator::visit(UnaryExpression& node) {}
 void BashGenerator::visit(VariableReassignment& node) {}
-void BashGenerator::visit(FunctionCallStmt& node) {}
+void BashGenerator::visit(FunctionCallStmt& node) {
+    if (node.identifier == "echo") {
+        include_echo(node);
+    }
+}
+
+// == INCLUDES ==
+void BashGenerator::include_echo(FunctionCallStmt& node) {
+    bash << "echo \"";
+    node.args.at(0)->accept(*this);
+    bash << "\"";
+}

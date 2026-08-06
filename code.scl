@@ -1,3 +1,4 @@
 #include <echo>
 
-echo("hello", 3);
+string a = "hello";
+echo(a);
