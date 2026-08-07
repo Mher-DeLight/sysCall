@@ -103,6 +103,7 @@ const std::unordered_map<std::string, TokenType> word_table{{{"", TokenType::Non
                                                              {"int", TokenType::KeywordVartype},
                                                              {"float", TokenType::KeywordVartype},
                                                              {"string", TokenType::KeywordVartype},
+                                                             {"auto", TokenType::KeywordVartype},
                                                              {"include", TokenType::PrewordInclude},
 
                                                              {"+", TokenType::Plus},

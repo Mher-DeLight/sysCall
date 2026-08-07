@@ -2,24 +2,26 @@
 #include <algorithm>
 #include <cassert>
 #include <iostream>
+#include <ostream>
 
-void BashGenerator::load_ast(std::unique_ptr<ScopeBlock> ast__) {
+void BashIrGenerator::load_ast(std::unique_ptr<ScopeBlock> ast__) {
     ast = std::move(ast__);
 }
-void BashGenerator::generate_bash() {
-    bash << "#!/bin/bash\n";
+void BashIrGenerator::generate_bash() {
+    /* bash << "#!/bin/bash\n";
     bash << "# This is an auto-generated Bash file. Some sections may appear cryptic while others "
             "may be verbose.\n";
     bash << "# Some elements may also not be stylized or formatted for readability.\n";
     bash << "# If present, it is better to read the .scl file that generated this script, as it "
             "would be more readable.\n";
     bash << "# Generated with sysCall. https://www.github.com/Mher-DeLight/SysCAll\n\n";
+    */
     ast->accept(*this);
 }
-std::string BashGenerator::get_bash() {
-    return bash.str();
+std::string BashIrGenerator::get_bash() {
+    return "ah, bash my dearest bash";
 }
-void BashGenerator::genPanic(const std::string& msg, const SourceLocation& src) {
+void BashIrGenerator::genPanic(const std::string& msg, const SourceLocation& src) {
     if (src.row == -1) {
         panic("[BASH GENERATOR PANIC] " + msg);
     } else {
@@ -27,161 +29,96 @@ void BashGenerator::genPanic(const std::string& msg, const SourceLocation& src) 
               std::to_string(src.column) + "]");
     }
 }
-void BashGenerator::numberOperation(BinaryExpression& node) {
-    bash << "$(echo \"";
-    node.left->accept(*this);
-
-    switch (node.op) {
-        case BinaryOperation::ADD:
-            bash << "+";
-            break;
-        case BinaryOperation::SUBTRACT:
-            bash << "-";
-            break;
-        case BinaryOperation::MULTIPLY:
-            bash << "*";
-            break;
-        case BinaryOperation::DIVIDE:
-            bash << "/";
-            break;
-        default:
-            break;
+std::unique_ptr<BashExpression> BashIrGenerator::getAsExpression(std::unique_ptr<Bash> bash) {
+    auto ptr = dynamic_cast<BashExpression*>(bash.release());
+    if (!ptr) {
+        genPanic("tried to read bash value as expression, invalid");
     }
-    node.right->accept(*this);
-    bash << "\" | bc -l)";
-}
-void BashGenerator::stringOperation(BinaryExpression& node) {
-    if (node.op != BinaryOperation::ADD)
-        genPanic("invalid string operation", node.location);
-
-    bash << "\"";
-    node.left->accept(*this);
-    node.right->accept(*this);
-    bash << "\"";
-}
-void BashGenerator::boolOperation(BinaryExpression& node) {
-    bash << "$(echo \"";
-    node.left->accept(*this);
-
-    switch (node.op) {
-        case BinaryOperation::GREATER_THAN:
-            bash << ">";
-            break;
-        case BinaryOperation::GREATER_THAN_OR_EQUAL:
-            bash << ">=";
-            break;
-        case BinaryOperation::LESS_THAN:
-            bash << "<";
-            break;
-        case BinaryOperation::LESS_THAN_OR_EQUAL:
-            bash << "<=";
-            break;
-        default:
-            break;
-    }
-    node.right->accept(*this);
-    bash << "\" | bc -l)";
+    std::unique_ptr<BashExpression> p(ptr);
+    return std::move(p);
 }
 
 // == VISIT ==
-void BashGenerator::visit(ScopeBlock& node) {
+void BashIrGenerator::visit(ScopeBlock& node) {
     for (auto& child : node.children) {
         child->accept(*this);
     }
 }
-void BashGenerator::visit(StringLiteral& node) {
-    bash << node.string;
+void BashIrGenerator::visit(StringLiteral& node) {
+    current_node =
+        std::move(std::make_unique<BashLiteral>(WrapType::NONE, VariableType::STRING, node.string));
 }
-void BashGenerator::visit(FloatLiteral& node) {
-    bash << node.number;
+void BashIrGenerator::visit(FloatLiteral& node) {
+    current_node = std::move(std::make_unique<BashLiteral>(WrapType::NONE, VariableType::FLOAT,
+                                                           std::to_string(node.number)));
 }
-void BashGenerator::visit(IntegerLiteral& node) {
-    bash << node.number;
+void BashIrGenerator::visit(IntegerLiteral& node) {
+    current_node = std::move(std::make_unique<BashLiteral>(WrapType::NONE, VariableType::INT,
+                                                           std::to_string(node.number)));
 }
-void BashGenerator::visit(BooleanLiteral& node) {
-    bash << (node.state ? "true" : "false");
+void BashIrGenerator::visit(BooleanLiteral& node) {
+    current_node = std::move(std::make_unique<BashLiteral>(WrapType::NONE, VariableType::BOOL,
+                                                           node.state ? "true" : "false"));
 }
-void BashGenerator::visit(VoidLiteral& node) {
-    bash << "\\\"NONE\\\"";
+void BashIrGenerator::visit(VoidLiteral& node) {
+    current_node =
+        std::move(std::make_unique<BashLiteral>(WrapType::NONE, VariableType::VOID, "NONE"));
 }
-void BashGenerator::visit(VariableDefinition& node) {
-    bash << node.identifier << "=";
-    if (node.type == VariableType::STRING)
-        bash << "\"";
+void BashIrGenerator::visit(VariableDefinition& node) {
     node.value->accept(*this);
-    if (node.type == VariableType::STRING)
-        bash << "\"";
-    bash << "\n";
+    auto value = getAsExpression(std::move(current_node));
+
+    bash_ir.push_back(std::make_unique<BashAssignment>(node.identifier, std::move(value)));
 }
-void BashGenerator::visit(BinaryExpression& node) {
-    if (node.return_type == VariableType::INT || node.return_type == VariableType::FLOAT) {
-        numberOperation(node);
-    } else if (node.return_type == VariableType::STRING || node.return_type == VariableType::CHAR) {
-        stringOperation(node);
-    } else if (node.return_type == VariableType::BOOL) {
-        boolOperation(node);
-    } else {
-        genPanic("invalid binary expression", node.location);
-    }
+void BashIrGenerator::visit(BinaryExpression& node) {
+    node.left->accept(*this);
+    auto left = getAsExpression(std::move(current_node));
+
+    node.right->accept(*this);
+    auto right = getAsExpression(std::move(current_node));
+
+    current_node = std::make_unique<BashBinaryExpression>(
+        std::move(left), node.op, std::move(right), node.return_type, WrapType::DOUBLE_QUOTE);
 }
-void BashGenerator::visit(IfStatement& node) {
-    bash << "if [[ ";
+void BashIrGenerator::visit(IfStatement& node) {
     node.condition->accept(*this);
-    bash << " = 1 ]]; then\n";
+    auto condition = getAsExpression(std::move(current_node));
+
+    bash_ir.push_back(std::make_unique<BashIfStatement>(std::move(condition)));
+
     node.block->accept(*this);
-    bash << "fi\n";
+
+    bash_ir.push_back(std::make_unique<BashEndIfStatement>());
 }
-void BashGenerator::visit(FunctionCallExpr& node) {
-    bash << "$(";
+void BashIrGenerator::visit(FunctionCallExpr& node) {
+    std::replace(node.identifier.begin(), node.identifier.end(), '.', ' ');
+    std::vector<std::unique_ptr<BashExpression>> args;
 
-    size_t pos = node.identifier.find('.');
-    std::string first =
-        (pos == std::string::npos) ? node.identifier : node.identifier.substr(0, pos);
-
-    if (std::find(includes.begin(), includes.end(), first) != includes.end()) {
-        std::replace(node.identifier.begin(), node.identifier.end(), '.', ' ');
-        bash << node.identifier << " ";
-        node.args.at(0).get()->accept(*this);
-        bash << ")";
-    } else {
-        genPanic("invalid to invoke " + node.identifier + " as expression");
+    for (auto& arg : node.args) {
+        arg->accept(*this);
+        args.push_back(getAsExpression(std::move(current_node)));
     }
-}
-void BashGenerator::visit(VariableReference& node) {
-    switch (node.return_type) {
-        case VariableType::STRING:
-        case VariableType::CHAR:
-            bash << "${" << node.identifier << "}";
-            break;
 
-        case VariableType::INT:
-        case VariableType::FLOAT:
-            bash << "${" << node.identifier << "}";
-            break;
-
-        default:
-            genPanic("unsupported variable type", node.location);
-    }
+    current_node = std::make_unique<BashFunctionCallExpression>(
+        WrapType::VARIABLE_WRAP, node.identifier, node.return_type, std::move(args));
 }
-void BashGenerator::visit(UnaryExpression& node) {}
-void BashGenerator::visit(VariableReassignment& node) {
-    bash << node.identifier << "=";
-    if (node.value->return_type == VariableType::STRING)
-        bash << "\"";
+void BashIrGenerator::visit(VariableReference& node) {
+    current_node = std::make_unique<BashVariableReference>(WrapType::VARIABLE_WRAP,
+                                                           node.return_type, node.identifier);
+}
+void BashIrGenerator::visit(UnaryExpression& node) {}
+void BashIrGenerator::visit(VariableReassignment& node) {
     node.value->accept(*this);
-    if (node.value->return_type == VariableType::STRING)
-        bash << "\"";
-    bash << "\n";
+    auto value = getAsExpression(std::move(current_node));
+    bash_ir.push_back(std::make_unique<BashAssignment>(node.identifier, std::move(value)));
 }
-void BashGenerator::visit(FunctionCallStmt& node) {
-    size_t pos = node.identifier.find('.');
-    std::string first =
-        (pos == std::string::npos) ? node.identifier : node.identifier.substr(0, pos);
-
-    if (std::find(includes.begin(), includes.end(), first) != includes.end()) {
-        std::replace(node.identifier.begin(), node.identifier.end(), '.', ' ');
-        bash << node.identifier << " ";
-        node.args.at(0).get()->accept(*this);
-        bash << "\n";
+void BashIrGenerator::visit(FunctionCallStmt& node) {
+    std::vector<std::unique_ptr<BashExpression>> args;
+    for (auto& arg : node.args) {
+        arg->accept(*this);
+        args.push_back(getAsExpression(std::move(current_node)));
     }
+
+    bash_ir.push_back(
+        std::make_unique<BashFunctionCallStatement>(node.identifier, std::move(args)));
 }

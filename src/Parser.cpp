@@ -63,6 +63,10 @@ std::unique_ptr<VariableDefinition> Parser::parseVariableDeclaration() {
         type = VariableType::FLOAT;
     else if (type_string == "bool")
         type = VariableType::BOOL;
+    else if (type_string == "auto")
+        type = VariableType::VOID;
+    else
+        parserPanic("invalid type \"" + type_string + "\"", tkn.location);
 
     std::string identifier =
         eat(TokenType::Identifier, "expected identifier for variable declaration").lexeme;

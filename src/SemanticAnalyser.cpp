@@ -84,6 +84,8 @@ ExpressionInfo SemanticAnalyser::analyseExpression(Expression* expr) {
             case BinaryOperation::GREATER_THAN_OR_EQUAL:
             case BinaryOperation::LESS_THAN:
             case BinaryOperation::LESS_THAN_OR_EQUAL:
+            case BinaryOperation::EQUALS:
+            case BinaryOperation::NOT_EQUALS:
                 returnType = VariableType::BOOL;
                 break;
 
@@ -239,9 +241,13 @@ void SemanticAnalyser::visit(VariableReassignment& node) {
     }
 }
 void SemanticAnalyser::visit(VariableDefinition& node) {
+    ExpressionInfo info = analyseExpression(node.value.get());
+    if (node.type == VariableType::VOID)
+        node.type = info.type;
+
     addSymbol(
         Symbol(node.identifier, SymbolKind::Variable, node.type, std::vector<VariableType>()));
-    ExpressionInfo info = analyseExpression(node.value.get());
+
     if (node.type != info.type) {
         semaPanic("variable type does not match assigned value", node.location);
     }
