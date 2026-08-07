@@ -1,14 +1,19 @@
 #include "../include/sysCall.h"
-#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
+#include <string>
 
-int main() {
-    std::ifstream fileStream("../code.scl");
+int main(int argc, char* argv[]) {
+    if (argc < 2) {
+        throw std::runtime_error("No files provided");
+    }
+    std::ifstream fileStream(argv[1]);
     if (!fileStream.is_open()) {
-        throw std::runtime_error("couldn't open file lolz");
+        std::string message = "couldn't open file:";
+        message.append(argv[1]);
+        throw std::runtime_error(message);
     }
     std::ostringstream sstr;
     sstr << fileStream.rdbuf();
