@@ -107,7 +107,7 @@ bool SemanticAnalyser::commandExists(const std::string& cmd) {
     return std::system(command.c_str()) == 0;
 }
 bool SemanticAnalyser::commandIncluded(const std::string& cmd) {
-    size_t pos = cmd.find('.');
+    size_t pos = cmd.find(' ');
     std::string first = (pos == std::string::npos) ? cmd : cmd.substr(0, pos);
 
     for (auto& inc : includes) {

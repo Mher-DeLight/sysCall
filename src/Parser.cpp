@@ -134,7 +134,7 @@ std::unique_ptr<FunctionCallStmt> Parser::parseFunctionCallStmt() {
     std::string identifier = tkn.lexeme;
 
     while (match(TokenType::Period)) {
-        identifier += ".";
+        identifier += " ";
         identifier +=
             eat(TokenType::Identifier, "expected identifier continuation after period").lexeme;
     }

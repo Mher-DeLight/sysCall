@@ -1,5 +1,6 @@
 #include "../include/BashPrinter.h"
 #include "../include/Common.h"
+#include <algorithm>
 
 void BashPrinter::load_bash(std::vector<std::unique_ptr<BashStatement>> bsh) {
     bash = std::move(bsh);
@@ -151,4 +152,21 @@ void BashPrinter::print(BashAssignment& node, std::ostream& stream) {
 }
 void BashPrinter::print(BashIfStatement& node, std::ostream& stream) {}
 void BashPrinter::print(BashEndIfStatement& node, std::ostream& stream) {}
-void BashPrinter::print(BashFunctionCallStatement& node, std::ostream& stream) {}
+void BashPrinter::print(BashFunctionCallStatement& node, std::ostream& stream) {
+    std::size_t dot_position = node.identifier.find(' ');
+    std::string first_section = (dot_position == std::string::npos)
+                                    ? node.identifier
+                                    : node.identifier.substr(0, dot_position);
+
+    if (std::find(includes.begin(), includes.end(), first_section) !=
+        includes.end()) { // we only care about if the first section is included, for example in
+                          // "git add" we only care about "git"
+
+        stream << node.identifier << " ";
+        for (auto& arg : node.args) {
+            arg->wrap_type = WrapType::NONE;
+            print_dispatcher(arg.get(), stream);
+            stream << " ";
+        }
+    }
+}
