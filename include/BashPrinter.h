@@ -16,6 +16,7 @@ class BashPrinter {
 
     void print_dispatcher(Bash* node, std::ostream& stream);
     std::string wrap(const std::string& string, WrapType wrap_type);
+    std::string get_operation(BinaryOperation operation);
 
 public:
     void load_bash(std::vector<std::unique_ptr<BashStatement>> bash_);

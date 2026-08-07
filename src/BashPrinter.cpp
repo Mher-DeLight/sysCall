@@ -1,6 +1,8 @@
 #include "../include/BashPrinter.h"
 #include "../include/Common.h"
+#include "../include/ErrorHandler.h"
 #include <algorithm>
+#include <iostream>
 
 void BashPrinter::load_bash(std::vector<std::unique_ptr<BashStatement>> bsh) {
     bash = std::move(bsh);
@@ -53,6 +55,48 @@ std::string BashPrinter::wrap(const std::string& string, WrapType wrap_type) {
         return "\"$(" + string + ")\"";
     }
 }
+std::string BashPrinter::get_operation(BinaryOperation operation) {
+    switch (operation) {
+        case BinaryOperation::EQUALS:
+            return " -eq ";
+            break;
+        case BinaryOperation::NOT_EQUALS:
+            return " -ne ";
+            break;
+        case BinaryOperation::GREATER_THAN:
+            return " -gt ";
+            break;
+        case BinaryOperation::GREATER_THAN_OR_EQUAL:
+            return " -ge ";
+            break;
+        case BinaryOperation::LESS_THAN:
+            return " -lt ";
+            break;
+        case BinaryOperation::LESS_THAN_OR_EQUAL:
+            return " -le ";
+            break;
+        case BinaryOperation::ADD:
+            return "+";
+            break;
+        case BinaryOperation::SUBTRACT:
+            return "-";
+            break;
+        case BinaryOperation::MULTIPLY:
+            return "*";
+            break;
+        case BinaryOperation::DIVIDE:
+            return "/";
+            break;
+        case BinaryOperation::POWER:
+            return "**";
+            break;
+        case BinaryOperation::ASSIGN:
+            return "=";
+            break;
+        default:
+            break;
+    }
+}
 
 void BashPrinter::print_bash(std::ostream& stream) {
     for (auto& bsh : bash) {
@@ -66,70 +110,43 @@ void BashPrinter::print(BashBinaryExpression& node, std::ostream& stream) {
     std::stringstream output;
     if (node.type == VariableType::BOOL) {
         print_dispatcher(node.left.get(), output);
-        switch (node.operation) {
-            case BinaryOperation::EQUALS:
-                output << "==";
-                break;
-            case BinaryOperation::NOT_EQUALS:
-                output << "!=";
-                break;
-            case BinaryOperation::GREATER_THAN:
-                output << ">";
-                break;
-            case BinaryOperation::GREATER_THAN_OR_EQUAL:
-                output << ">=";
-                break;
-            case BinaryOperation::LESS_THAN:
-                output << "<";
-                break;
-            case BinaryOperation::LESS_THAN_OR_EQUAL:
-                output << "<=";
-                break;
-            case BinaryOperation::LOGICAL_AND:
-                output << "&&";
-                break;
-            case BinaryOperation::LOGICAL_OR:
-                output << "||";
-                break;
-            default:
-                break;
-        }
+        output << get_operation(node.operation);
         print_dispatcher(node.right.get(), output);
         stream << wrap(output.str(), node.wrap_type);
         return;
     }
 
-    output << "echo ";
-    if (dynamic_cast<BashBinaryExpression*>(node.left.get()))
-        node.left->wrap_type = WrapType::COMMAND_WRAP;
-    print_dispatcher(node.left.get(), output);
-    switch (node.operation) {
-        case BinaryOperation::ADD:
-            output << "+";
-            break;
-        case BinaryOperation::SUBTRACT:
-            output << "-";
-            break;
-        case BinaryOperation::MULTIPLY:
-            output << "*";
-            break;
-        case BinaryOperation::DIVIDE:
-            output << "/";
-            break;
-        case BinaryOperation::POWER:
-            output << "**";
-            break;
-        case BinaryOperation::ASSIGN:
-            output << "=";
-            break;
-        default:
-            break;
+    if (node.type != VariableType::STRING) {
+        output << "echo ";
+        if (dynamic_cast<BashBinaryExpression*>(node.left.get()))
+            node.left->wrap_type = WrapType::COMMAND_WRAP;
+
+        print_dispatcher(node.left.get(), output);
+
+        output << get_operation(node.operation);
+
+        if (dynamic_cast<BashBinaryExpression*>(node.right.get()))
+            node.right->wrap_type = WrapType::COMMAND_WRAP;
+
+        print_dispatcher(node.right.get(), output);
+        output << " | bc -l)";
+        stream << wrap(output.str(), node.wrap_type);
+    } else {
+        if (dynamic_cast<BashLiteral*>(node.left.get()))
+            node.left->wrap_type = WrapType::DOUBLE_QUOTE;
+
+        print_dispatcher(node.left.get(), output);
+
+        if (node.operation != BinaryOperation::ADD) {
+            panic("Bash Generator cannot perform a non-addition operation between two strings");
+        }
+
+        if (dynamic_cast<BashLiteral*>(node.right.get()))
+            node.right->wrap_type = WrapType::DOUBLE_QUOTE;
+
+        print_dispatcher(node.right.get(), output);
+        stream << wrap(output.str(), node.wrap_type);
     }
-    if (dynamic_cast<BashBinaryExpression*>(node.right.get()))
-        node.right->wrap_type = WrapType::COMMAND_WRAP;
-    print_dispatcher(node.right.get(), output);
-    output << " | bc -l";
-    stream << wrap(output.str(), node.wrap_type);
 }
 void BashPrinter::print(BashLiteral& node, std::ostream& stream) {
     stream << wrap(node.data, node.wrap_type);
@@ -150,8 +167,18 @@ void BashPrinter::print(BashAssignment& node, std::ostream& stream) {
     }
     print_dispatcher(node.right.get(), stream);
 }
-void BashPrinter::print(BashIfStatement& node, std::ostream& stream) {}
-void BashPrinter::print(BashEndIfStatement& node, std::ostream& stream) {}
+void BashPrinter::print(BashIfStatement& node, std::ostream& stream) {
+    stream << "if [[ ";
+    node.condition->wrap_type = WrapType::NONE;
+    print_dispatcher(node.condition.get(), stream);
+    stream << " ]]; then";
+    for (auto& then : node.if_true) {
+        print_dispatcher(then.get(), stream);
+    }
+}
+void BashPrinter::print(BashEndIfStatement& node, std::ostream& stream) {
+    stream << "fi";
+}
 void BashPrinter::print(BashFunctionCallStatement& node, std::ostream& stream) {
     std::size_t dot_position = node.identifier.find(' ');
     std::string first_section = (dot_position == std::string::npos)
