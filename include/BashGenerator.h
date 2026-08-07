@@ -12,6 +12,9 @@ enum class WrapType {
     VARIABLE_WRAP,
     SINGLE_VARIABE_WRAP,
     DOUBLE_VARIABLE_WRAP,
+    COMMAND_WRAP,
+    SINGLE_COMMAND_WRAP,
+    DOUBLE_COMMAND_WRAP
 };
 
 class Bash {
