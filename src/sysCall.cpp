@@ -11,7 +11,6 @@ void Compiler::compile(const std::string& code, std::ostream& stream) {
     sema.load_ast(parser.hand_over_AST());
     sema.analyse();
 
-    gen.load_ast(sema.hand_over_AST());
-    gen.generate_bash();
-    stream << gen.get_bash();
+    irGen.load_ast(sema.hand_over_AST());
+    irGen.generate_bash_ir();
 }

@@ -127,6 +127,6 @@ public:
     void visit(VariableReassignment& node) override;
     void visit(FunctionCallStmt& node) override;
 
-    void generate_bash();
-    std::string get_bash();
+    void generate_bash_ir();
+    std::vector<std::unique_ptr<BashStatement>> get_bash_ir();
 };

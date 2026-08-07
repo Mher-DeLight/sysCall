@@ -7,19 +7,11 @@
 void BashIrGenerator::load_ast(std::unique_ptr<ScopeBlock> ast__) {
     ast = std::move(ast__);
 }
-void BashIrGenerator::generate_bash() {
-    /* bash << "#!/bin/bash\n";
-    bash << "# This is an auto-generated Bash file. Some sections may appear cryptic while others "
-            "may be verbose.\n";
-    bash << "# Some elements may also not be stylized or formatted for readability.\n";
-    bash << "# If present, it is better to read the .scl file that generated this script, as it "
-            "would be more readable.\n";
-    bash << "# Generated with sysCall. https://www.github.com/Mher-DeLight/SysCAll\n\n";
-    */
+void BashIrGenerator::generate_bash_ir() {
     ast->accept(*this);
 }
-std::string BashIrGenerator::get_bash() {
-    return "ah, bash my dearest bash";
+std::vector<std::unique_ptr<BashStatement>> BashIrGenerator::get_bash_ir() {
+    return std::move(bash_ir);
 }
 void BashIrGenerator::genPanic(const std::string& msg, const SourceLocation& src) {
     if (src.row == -1) {

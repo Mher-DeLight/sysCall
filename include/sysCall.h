@@ -13,7 +13,7 @@ private:
     Tokenizer tokenizer;
     Parser parser;
     SemanticAnalyser sema;
-    BashIrGenerator gen;
+    BashIrGenerator irGen;
 
 public:
     void compile(const std::string& code, std::ostream& stream = std::cout);
