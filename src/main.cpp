@@ -19,10 +19,13 @@ int main() {
     }
 
     Compiler compiler;
-    compiler.compile(sstr.str(), output);
+    // compiler.compile(sstr.str(), output);
 
-    output.close();
+    // output.close();
 
-    int result = system("bash ../output.sh");
-    return result;
+    // int result = system("bash ../output.sh");
+    // return result;
+
+    compiler.compile(sstr.str(), std::cout);
+    std::cout << std::endl;
 }
