@@ -18,6 +18,7 @@ add_executable(sysCall
         src/Visitor.cpp
         src/SemanticAnalyser.cpp
         src/BashGenerator.cpp
+        src/BashPrinter.cpp
 )
 target_include_directories(sysCall
     PRIVATE

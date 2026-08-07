@@ -1,5 +1,6 @@
 #pragma once
 #include "BashGenerator.h"
+#include "BashPrinter.h"
 #include "Parser.h"
 #include "SemanticAnalyser.h"
 #include "Tokenizer.h"
@@ -14,6 +15,7 @@ private:
     Parser parser;
     SemanticAnalyser sema;
     BashIrGenerator irGen;
+    BashPrinter printer;
 
 public:
     void compile(const std::string& code, std::ostream& stream = std::cout);

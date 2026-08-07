@@ -13,4 +13,7 @@ void Compiler::compile(const std::string& code, std::ostream& stream) {
 
     irGen.load_ast(sema.hand_over_AST());
     irGen.generate_bash_ir();
+
+    printer.load_bash(irGen.get_bash_ir());
+    printer.print_bash(stream);
 }
