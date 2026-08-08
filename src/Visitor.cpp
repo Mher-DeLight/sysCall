@@ -93,7 +93,7 @@ void PrettyPrinter::visit(VoidLiteral& node) {
 void PrettyPrinter::visit(UnaryExpression& node) {
     printIndent();
 
-    stream << "UnaryExpression " << (int)node.op;
+    stream << "UnaryExpression " << (int)node.op << "\n";
     indent++;
     node.value->accept(*this);
     indent--;

@@ -94,6 +94,19 @@ ExpressionInfo SemanticAnalyser::analyseExpression(Expression* expr) {
         }
         expr->return_type = returnType;
         return ExpressionInfo(returnType, false, true);
+    } else if (auto uxpr = dynamic_cast<UnaryExpression*>(expr)) {
+        uxpr->value->accept(*this);
+        if (uxpr->op == UnaryOperation::COMPLEMENT && uxpr->return_type != VariableType::BOOL) {
+            semaPanic("cannot get the logical inverse of a non-booelan expression", uxpr->location);
+        }
+        if ((uxpr->op == UnaryOperation::DECREMENT || uxpr->op == UnaryOperation::INCREMENT ||
+             uxpr->op == UnaryOperation::NEGATE) &&
+            (uxpr->value->return_type != VariableType::INT &&
+             uxpr->value->return_type != VariableType::FLOAT)) {
+            semaPanic("cannot decrement/increment/negate non-integer/float value");
+        }
+        uxpr->return_type = uxpr->value->return_type;
+        return ExpressionInfo(uxpr->return_type, false, true);
     } else {
         semaPanic("invalid expression", expr->location);
     }

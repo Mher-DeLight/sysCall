@@ -50,6 +50,8 @@ enum class TokenType {
     DoubleStraightLine,
     Exclamation,
     Hashtag,
+    PlusPlus,
+    MinusMinus,
 
     KeywordIf,
     KeywordElse,
@@ -60,7 +62,7 @@ enum class TokenType {
 
     EndOfFile
 };
-enum class UnaryOperation { COMPLEMENT, INCREMENT, DECREMENT };
+enum class UnaryOperation { COMPLEMENT, INCREMENT, DECREMENT, NEGATE };
 enum class BinaryOperation {
     ADD,
     SUBTRACT,
@@ -141,7 +143,9 @@ const std::unordered_map<std::string, TokenType> word_table{
      {",", TokenType::Comma},
      {"#", TokenType::Hashtag},
      {".", TokenType::Period},
-     {",", TokenType::Comma}}};
+     {",", TokenType::Comma},
+     {"++", TokenType::PlusPlus},
+     {"--", TokenType::MinusMinus}}};
 
 struct ExpressionInfo {
     VariableType type;
@@ -215,7 +219,7 @@ public:
 
     void accept(Visitor& visitor) override;
     UnaryExpression(const SourceLocation& src, std::unique_ptr<Expression> value_,
-                    UnaryOperation& op_)
+                    UnaryOperation op_)
         : Expression(src), value(std::move(value_)), op(op_) {}
 };
 

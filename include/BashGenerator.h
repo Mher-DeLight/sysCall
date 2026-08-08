@@ -65,6 +65,15 @@ public:
     BashVariableReference(WrapType wrap_type, VariableType type, const std::string& identifier_)
         : BashExpression(wrap_type, type), identifier(identifier_) {}
 };
+class BashUnaryExpression : public BashExpression {
+public:
+    UnaryOperation operation;
+    std::unique_ptr<BashExpression> value;
+
+    BashUnaryExpression(WrapType wrap_type, VariableType var_type, SourceLocation lct,
+                        UnaryOperation op, std::unique_ptr<BashExpression> value_)
+        : BashExpression(wrap_type, var_type), operation(op), value(std::move(value_)) {}
+};
 
 class BashStatement : public Bash {
 public:

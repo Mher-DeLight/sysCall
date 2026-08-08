@@ -101,7 +101,13 @@ void BashIrGenerator::visit(VariableReference& node) {
     current_node = std::make_unique<BashVariableReference>(WrapType::VARIABLE_WRAP,
                                                            node.return_type, node.identifier);
 }
-void BashIrGenerator::visit(UnaryExpression& node) {}
+void BashIrGenerator::visit(UnaryExpression& node) {
+    node.value->accept(*this);
+    auto value = getAsExpression(std::move(current_node));
+
+    current_node = std::make_unique<BashUnaryExpression>(WrapType::NONE, value->type, node.location,
+                                                         node.op, std::move(value));
+}
 void BashIrGenerator::visit(VariableReassignment& node) {
     node.value->accept(*this);
     auto value = getAsExpression(std::move(current_node));

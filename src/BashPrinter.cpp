@@ -38,6 +38,8 @@ void BashPrinter::print_dispatcher(Bash* node, std::ostream& stream) {
         return print(*nd, stream);
     } else if (auto nd = dynamic_cast<BashDone*>(node)) {
         return print(*nd, stream);
+    } else if (auto nd = dynamic_cast<BashUnaryExpression*>(node)) {
+        return print(*nd, stream);
     } else {
         panic("invalid node for bash generator");
     }
@@ -313,4 +315,38 @@ void BashPrinter::print(BashForLoop& node, std::ostream& stream) {
 }
 void BashPrinter::print(BashDone& node, std::ostream& stream) {
     stream << "done";
+}
+void BashPrinter::print(BashUnaryExpression& node, std::ostream& stream) {
+    std::string unop = "";
+    bool space = false;
+    switch (node.operation) {
+        case UnaryOperation::NEGATE:
+            unop = "-";
+            break;
+        case UnaryOperation::COMPLEMENT:
+            unop = "!";
+            space = true;
+            break;
+        case UnaryOperation::INCREMENT:
+            unop = "++";
+            break;
+        case UnaryOperation::DECREMENT:
+            unop = "--";
+            break;
+        default:
+            panic("invalid unary operation");
+            break;
+    }
+
+    std::stringstream output;
+    output << "$((";
+    output << unop;
+    if (space)
+        output << " ";
+    if (dynamic_cast<BashVariableReference*>(node.value.get()))
+        node.value->wrap_type = WrapType::NONE; // we want to modify the variable, not its value
+    print_dispatcher(node.value.get(), output);
+
+    output << "))";
+    stream << wrap(output.str(), node.wrap_type);
 }

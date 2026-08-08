@@ -82,10 +82,10 @@ std::unique_ptr<VariableDefinition> Parser::parseVariableDeclaration() {
     std::string identifier =
         eat(TokenType::Identifier, "expected identifier for variable declaration").lexeme;
 
-    eat(TokenType::Equal);
+    eat(TokenType::Equal, "expected equals sign for variable declaration");
 
     std::unique_ptr<Expression> value = parseExpression();
-    eat(TokenType::Semicolon);
+    eat(TokenType::Semicolon, "expected semi colon after variable declaration");
 
     return std::make_unique<VariableDefinition>(tkn.location, type, identifier, std::move(value));
 }
@@ -324,19 +324,25 @@ std::unique_ptr<Expression> Parser::parseMultiplication() {
     return node;
 }
 std::unique_ptr<Expression> Parser::parseUnary() {
-    UnaryOperation opr;
-    bool hasUnary = false;
-
     auto tkn = peek();
 
     if (match(TokenType::Exclamation)) {
-        hasUnary = true;
-        opr = UnaryOperation::COMPLEMENT;
+        return std::make_unique<UnaryExpression>(tkn.location, parseUnary(),
+                                                 UnaryOperation::COMPLEMENT);
+    }
+    if (match(TokenType::PlusPlus)) {
+        return std::make_unique<UnaryExpression>(tkn.location, parseUnary(),
+                                                 UnaryOperation::INCREMENT);
+    }
+    if (match(TokenType::MinusMinus)) {
+        return std::make_unique<UnaryExpression>(tkn.location, parseUnary(),
+                                                 UnaryOperation::DECREMENT);
+    }
+    if (match(TokenType::Minus)) {
+        return std::make_unique<UnaryExpression>(tkn.location, parseUnary(),
+                                                 UnaryOperation::NEGATE);
     }
 
-    if (hasUnary) {
-        return std::make_unique<UnaryExpression>(tkn.location, parseFactor(), opr);
-    }
     return parseFactor();
 }
 std::unique_ptr<Expression> Parser::parseFactor() {
@@ -357,24 +363,18 @@ std::unique_ptr<Expression> Parser::parseFactor() {
     return parseLiteral();
 }
 std::unique_ptr<Literal> Parser::parseLiteral() {
-    bool negative = false;
-    if (match(TokenType::Minus)) {
-        negative = true;
-    }
     auto token = peek();
     advance();
 
-    if (token.type == TokenType::StringLiteral && !negative) {
+    if (token.type == TokenType::StringLiteral) {
         return std::make_unique<StringLiteral>(token.location, token.lexeme);
-    } else if (token.type == TokenType::BoolLiteral && !negative &&
+    } else if (token.type == TokenType::BoolLiteral &&
                (token.lexeme == "true" || token.lexeme == "false")) {
         return std::make_unique<BooleanLiteral>(token.location, token.lexeme == "true");
     } else if (token.type == TokenType::IntegerLiteral) {
-        return std::make_unique<IntegerLiteral>(token.location,
-                                                std::stoi(token.lexeme) * (negative ? -1 : 1));
+        return std::make_unique<IntegerLiteral>(token.location, std::stoi(token.lexeme));
     } else if (token.type == TokenType::FloatLiteral) {
-        return std::make_unique<FloatLiteral>(token.location,
-                                              std::stof(token.lexeme) * (negative ? -1 : 1));
+        return std::make_unique<FloatLiteral>(token.location, std::stof(token.lexeme));
     }
 
     parserPanic("invalid token " + token.lexeme, token.location);

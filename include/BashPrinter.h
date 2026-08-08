@@ -10,6 +10,7 @@ class BashPrinter {
     void print(BashLiteral& node, std::ostream& stream);
     void print(BashFunctionCallExpression& node, std::ostream& stream);
     void print(BashVariableReference& node, std::ostream& stream);
+    void print(BashUnaryExpression& node, std::ostream& stream);
 
     void print(BashAssignment& node, std::ostream& stream);
     void print(BashIfStatement& node, std::ostream& stream);
