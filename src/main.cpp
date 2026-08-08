@@ -6,10 +6,17 @@
 #include <string>
 
 int main(int argc, char* argv[]) {
-    if (argc < 2) {
-        throw std::runtime_error("No files provided");
+    std::string read_from = "../code.scl";
+    std::string write_to = "../output.sh";
+
+    if (argc == 2) {
+        read_from = argv[1];
+    } else if (argc > 2) {
+        read_from = argv[1];
+        write_to = argv[2];
     }
-    std::ifstream fileStream(argv[1]);
+
+    std::ifstream fileStream(read_from);
     if (!fileStream.is_open()) {
         std::string message = "couldn't open file:";
         message.append(argv[1]);
@@ -18,19 +25,18 @@ int main(int argc, char* argv[]) {
     std::ostringstream sstr;
     sstr << fileStream.rdbuf();
 
-    std::ofstream output("../output.sh");
+    std::ofstream output(write_to);
     if (!output.is_open()) {
         throw std::runtime_error("couldn't open output file lolze");
     }
 
     Compiler compiler;
-    // compiler.compile(sstr.str(), output);
+    compiler.compile(sstr.str(), output);
 
-    // output.close();
+    output.close();
 
-    // int result = system("bash ../output.sh");
-    // return result;
-
-    compiler.compile(sstr.str(), std::cout);
-    std::cout << std::endl;
+    std::string cmd = "bash " + write_to;
+    std::cout << "==OUTPUT==\n";
+    int result = system(cmd.data());
+    return result;
 }

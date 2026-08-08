@@ -3,10 +3,12 @@
 #include "../include/ErrorHandler.h"
 #include <algorithm>
 #include <iostream>
+#include <sstream>
 
 void BashPrinter::load_bash(std::vector<std::unique_ptr<BashStatement>> bsh) {
     bash = std::move(bsh);
 }
+
 void BashPrinter::print_dispatcher(Bash* node, std::ostream& stream) {
     if (auto nd = dynamic_cast<BashAssignment*>(node)) {
         return print(*nd, stream);
@@ -26,75 +28,65 @@ void BashPrinter::print_dispatcher(Bash* node, std::ostream& stream) {
         return print(*nd, stream);
     }
 }
+
 std::string BashPrinter::wrap(const std::string& string, WrapType wrap_type) {
-    if (wrap_type == WrapType::NONE) {
-        return string;
+    switch (wrap_type) {
+        case WrapType::NONE:
+            return string;
+        case WrapType::DOUBLE_QUOTE:
+            return "\"" + string + "\"";
+        case WrapType::SINGLE_QUOTE:
+            return "\'" + string + "\'";
+        case WrapType::VARIABLE_WRAP:
+            return "${" + string + "}";
+        case WrapType::SINGLE_VARIABE_WRAP:
+            return "\'${" + string + "}\'";
+        case WrapType::DOUBLE_VARIABLE_WRAP:
+            return "\"${" + string + "}\"";
+        case WrapType::COMMAND_WRAP:
+            return "$(" + string + ")";
+        case WrapType::SINGLE_COMMAND_WRAP:
+            return "\'$(" + string + ")\'";
+        case WrapType::DOUBLE_COMMAND_WRAP:
+            return "\"$(" + string + ")\"";
     }
-    if (wrap_type == WrapType::DOUBLE_QUOTE) {
-        return "\"" + string + "\"";
-    }
-    if (wrap_type == WrapType::SINGLE_QUOTE) {
-        return "\'" + string + "\'";
-    }
-    if (wrap_type == WrapType::VARIABLE_WRAP) {
-        return "${" + string + "}";
-    }
-    if (wrap_type == WrapType::SINGLE_VARIABE_WRAP) {
-        return "\'${" + string + "}\'";
-    }
-    if (wrap_type == WrapType::DOUBLE_VARIABLE_WRAP) {
-        return "\"${" + string + "}\"";
-    }
-    if (wrap_type == WrapType::COMMAND_WRAP) {
-        return "$(" + string + ")";
-    }
-    if (wrap_type == WrapType::SINGLE_COMMAND_WRAP) {
-        return "\'$(" + string + ")\'";
-    }
-    if (wrap_type == WrapType::DOUBLE_COMMAND_WRAP) {
-        return "\"$(" + string + ")\"";
-    }
+    return string;
 }
+
 std::string BashPrinter::get_operation(BinaryOperation operation) {
     switch (operation) {
         case BinaryOperation::EQUALS:
             return " -eq ";
-            break;
         case BinaryOperation::NOT_EQUALS:
             return " -ne ";
-            break;
         case BinaryOperation::GREATER_THAN:
             return " -gt ";
-            break;
         case BinaryOperation::GREATER_THAN_OR_EQUAL:
             return " -ge ";
-            break;
         case BinaryOperation::LESS_THAN:
             return " -lt ";
-            break;
         case BinaryOperation::LESS_THAN_OR_EQUAL:
             return " -le ";
-            break;
         case BinaryOperation::ADD:
-            return "+";
-            break;
+            return " + ";
         case BinaryOperation::SUBTRACT:
-            return "-";
-            break;
+            return " - ";
         case BinaryOperation::MULTIPLY:
-            return "*";
-            break;
+            return " * ";
         case BinaryOperation::DIVIDE:
-            return "/";
-            break;
+            return " / ";
         case BinaryOperation::POWER:
-            return "**";
-            break;
+            return " ** ";
         case BinaryOperation::ASSIGN:
             return "=";
-            break;
+        case BinaryOperation::LOGICAL_AND:
+            return " && ";
+        case BinaryOperation::LOGICAL_OR:
+            return " || ";
+        case BinaryOperation::LOGICAL_XOR:
+            return " ^ ";
         default:
-            break;
+            return " ";
     }
 }
 
@@ -107,88 +99,139 @@ void BashPrinter::print_bash(std::ostream& stream) {
 
 // === SUBPRINT FUNCTIONS ===
 void BashPrinter::print(BashBinaryExpression& node, std::ostream& stream) {
-    std::stringstream output;
     if (node.type == VariableType::BOOL) {
+        std::ostringstream output;
+
+        if (auto* lft = dynamic_cast<BashBinaryExpression*>(node.left.get())) {
+            if (lft->type == VariableType::INT) {
+                lft->wrap_type = WrapType::COMMAND_WRAP;
+            }
+        }
+        if (auto* lft = dynamic_cast<BashLiteral*>(node.left.get())) {
+            if (lft->type == VariableType::STRING) {
+                lft->wrap_type = WrapType::DOUBLE_QUOTE;
+            }
+        }
         print_dispatcher(node.left.get(), output);
-        output << get_operation(node.operation);
+
+        if (node.left->type == VariableType::STRING && node.right->type == VariableType::STRING) {
+            if (node.operation == BinaryOperation::EQUALS) {
+                output << " == ";
+            } else if (node.operation == BinaryOperation::NOT_EQUALS) {
+                output << " != ";
+            } else {
+                panic("Bash Printer cannot print non-equality check operator for two strings");
+            }
+        } else {
+            output << get_operation(node.operation);
+        }
+        if (auto* rgt = dynamic_cast<BashBinaryExpression*>(node.right.get())) {
+            if (rgt->type == VariableType::INT) {
+                rgt->wrap_type = WrapType::COMMAND_WRAP;
+            }
+        }
+        if (auto* rgt = dynamic_cast<BashLiteral*>(node.right.get())) {
+            if (rgt->type == VariableType::STRING) {
+                rgt->wrap_type = WrapType::DOUBLE_QUOTE;
+            }
+        }
         print_dispatcher(node.right.get(), output);
         stream << wrap(output.str(), node.wrap_type);
         return;
     }
 
-    if (node.type != VariableType::STRING) {
-        output << "echo ";
-        if (dynamic_cast<BashBinaryExpression*>(node.left.get()))
-            node.left->wrap_type = WrapType::COMMAND_WRAP;
-
-        print_dispatcher(node.left.get(), output);
-
-        output << get_operation(node.operation);
-
-        if (dynamic_cast<BashBinaryExpression*>(node.right.get()))
-            node.right->wrap_type = WrapType::COMMAND_WRAP;
-
-        print_dispatcher(node.right.get(), output);
-        output << " | bc -l)";
-        stream << wrap(output.str(), node.wrap_type);
-    } else {
-        if (dynamic_cast<BashLiteral*>(node.left.get()))
-            node.left->wrap_type = WrapType::DOUBLE_QUOTE;
-
-        print_dispatcher(node.left.get(), output);
-
+    if (node.type == VariableType::STRING) {
         if (node.operation != BinaryOperation::ADD) {
             panic("Bash Generator cannot perform a non-addition operation between two strings");
         }
 
-        if (dynamic_cast<BashLiteral*>(node.right.get()))
-            node.right->wrap_type = WrapType::DOUBLE_QUOTE;
+        std::ostringstream output;
+        if (auto* literal = dynamic_cast<BashLiteral*>(node.left.get())) {
+            literal->wrap_type = WrapType::DOUBLE_QUOTE;
+        } else if (auto* variable = dynamic_cast<BashVariableReference*>(node.left.get())) {
+            variable->wrap_type = WrapType::VARIABLE_WRAP;
+        } else if (auto* binar_expr = dynamic_cast<BashBinaryExpression*>(node.left.get())) {
+            binar_expr->wrap_type = WrapType::COMMAND_WRAP;
+        }
+        print_dispatcher(node.left.get(), output);
 
+        if (auto* literal = dynamic_cast<BashLiteral*>(node.right.get())) {
+            literal->wrap_type = WrapType::DOUBLE_QUOTE;
+        } else if (auto* variable = dynamic_cast<BashVariableReference*>(node.right.get())) {
+            variable->wrap_type = WrapType::VARIABLE_WRAP;
+        } else if (auto* binar_expr = dynamic_cast<BashBinaryExpression*>(node.right.get())) {
+            binar_expr->wrap_type = WrapType::COMMAND_WRAP;
+        }
         print_dispatcher(node.right.get(), output);
+
         stream << wrap(output.str(), node.wrap_type);
+        return;
     }
+
+    std::ostringstream output;
+    output << "bc -l <<< \"";
+    print_dispatcher(node.left.get(), output);
+    output << get_operation(node.operation);
+    print_dispatcher(node.right.get(), output);
+    output << "\"";
+
+    stream << wrap(output.str(), node.wrap_type);
 }
+
 void BashPrinter::print(BashLiteral& node, std::ostream& stream) {
     stream << wrap(node.data, node.wrap_type);
 }
-void BashPrinter::print(BashFunctionCallExpression& node, std::ostream& stream) {}
+
+void BashPrinter::print(BashFunctionCallExpression& node, std::ostream& stream) {
+    stream << node.identifier;
+    for (auto& arg : node.args) {
+        stream << " ";
+        print_dispatcher(arg.get(), stream);
+    }
+}
+
 void BashPrinter::print(BashVariableReference& node, std::ostream& stream) {
     stream << wrap(node.identifier, node.wrap_type);
 }
 
 void BashPrinter::print(BashAssignment& node, std::ostream& stream) {
     stream << node.identifier << "=";
-    if (dynamic_cast<BashBinaryExpression*>(node.right.get())) {
-        node.right->wrap_type = WrapType::COMMAND_WRAP;
-    } else if (node.right->type == VariableType::STRING) {
+    if (node.right->type == VariableType::INT || node.right->type == VariableType::FLOAT) {
+        node.right->wrap_type = WrapType::NONE;
+        print_dispatcher(node.right.get(), stream);
+    } else if (node.right->type == VariableType::STRING || node.right->type == VariableType::BOOL) {
         node.right->wrap_type = WrapType::DOUBLE_QUOTE;
-    } else if (dynamic_cast<BashVariableReference*>(node.right.get())) {
-        node.right->wrap_type = WrapType::DOUBLE_VARIABLE_WRAP;
+        print_dispatcher(node.right.get(), stream);
     }
-    print_dispatcher(node.right.get(), stream);
 }
+
 void BashPrinter::print(BashIfStatement& node, std::ostream& stream) {
     stream << "if [[ ";
-    node.condition->wrap_type = WrapType::NONE;
+    if (node.condition->type != VariableType::BOOL)
+        node.condition->wrap_type = WrapType::COMMAND_WRAP; // cuz it would use bc -l
+    else
+        node.condition->wrap_type = WrapType::NONE;
     print_dispatcher(node.condition.get(), stream);
+
     stream << " ]]; then";
     for (auto& then : node.if_true) {
+        stream << "\n";
         print_dispatcher(then.get(), stream);
     }
 }
+
 void BashPrinter::print(BashEndIfStatement& node, std::ostream& stream) {
+    (void)node;
     stream << "fi";
 }
+
 void BashPrinter::print(BashFunctionCallStatement& node, std::ostream& stream) {
     std::size_t dot_position = node.identifier.find(' ');
     std::string first_section = (dot_position == std::string::npos)
                                     ? node.identifier
                                     : node.identifier.substr(0, dot_position);
 
-    if (std::find(includes.begin(), includes.end(), first_section) !=
-        includes.end()) { // we only care about if the first section is included, for example in
-                          // "git add" we only care about "git"
-
+    if (std::find(includes.begin(), includes.end(), first_section) != includes.end()) {
         stream << node.identifier << " ";
         for (auto& arg : node.args) {
             arg->wrap_type = WrapType::NONE;
