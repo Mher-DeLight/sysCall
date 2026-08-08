@@ -86,15 +86,17 @@ std::unique_ptr<IfStatement> Parser::parseIfStatement() {
     eat(TokenType::RParen, "expected ')' after if statement condition");
 
     std::unique_ptr<ScopeBlock> scope = parseScope(true);
-    std::unique_ptr<ElseIfStatement> nextElseIf = nullptr;
-    while (check(TokenType::KeywordElse)) {
+    std::unique_ptr<ConditionalStatement> nextStmt = nullptr;
+    if (check(TokenType::KeywordElse)) {
         if (peek(1).type == TokenType::KeywordIf) {
-            nextElseIf = parseElseIfStatement();
+            nextStmt = parseElseIfStatement();
+        } else {
+            nextStmt = parseElseStatement();
         }
     }
 
     return std::make_unique<IfStatement>(lct, std::move(condition), std::move(scope),
-                                         std::move(nextElseIf));
+                                         std::move(nextStmt));
 }
 std::unique_ptr<FunctionCallExpr> Parser::parseFunctionCallExpr() {
     Token tkn = eat(TokenType::Identifier, "expected identifier for function call");
@@ -174,15 +176,22 @@ std::unique_ptr<ElseIfStatement> Parser::parseElseIfStatement() {
     eat(TokenType::RParen, "expected ')' after if statement condition");
 
     std::unique_ptr<ScopeBlock> scope = parseScope(true);
-    std::unique_ptr<ElseIfStatement> nextElseIf = nullptr;
-    while (check(TokenType::KeywordElse)) {
+    std::unique_ptr<ConditionalStatement> nextStmt = nullptr;
+    if (check(TokenType::KeywordElse)) {
         if (peek(1).type == TokenType::KeywordIf) {
-            nextElseIf = parseElseIfStatement();
+            nextStmt = parseElseIfStatement();
+        } else {
+            nextStmt = parseElseStatement();
         }
     }
 
     return std::make_unique<ElseIfStatement>(lct, std::move(condition), std::move(scope),
-                                             std::move(nextElseIf));
+                                             std::move(nextStmt));
+}
+std::unique_ptr<ElseStatement> Parser::parseElseStatement() {
+    auto lct = eat(TokenType::KeywordElse, "expected 'else' keyword for else").location;
+    std::unique_ptr<ScopeBlock> scope = parseScope(true);
+    return std::make_unique<ElseStatement>(lct, std::move(scope));
 }
 
 // == EXPRESSION PARSERS ==

@@ -28,6 +28,8 @@ void BashPrinter::print_dispatcher(Bash* node, std::ostream& stream) {
         return print(*nd, stream);
     } else if (auto nd = dynamic_cast<BashElseIfStatement*>(node)) {
         return print(*nd, stream);
+    } else if (auto nd = dynamic_cast<BashElseStatement*>(node)) {
+        return print(*nd, stream);
     } else {
         panic("invalid node for bash generator");
     }
@@ -276,6 +278,15 @@ void BashPrinter::print(BashElseIfStatement& node, std::ostream& stream) {
 
     stream << " ]]; then";
     for (auto& then : node.if_true) {
+        stream << "\n";
+        print_dispatcher(then.get(), stream);
+    }
+}
+
+void BashPrinter::print(BashElseStatement& node, std::ostream& stream) {
+    stream << "else";
+
+    for (auto& then : node.scope) {
         stream << "\n";
         print_dispatcher(then.get(), stream);
     }

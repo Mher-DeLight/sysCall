@@ -111,6 +111,13 @@ public:
         std::vector<std::unique_ptr<Bash>> if_true_ = std::vector<std::unique_ptr<Bash>>{})
         : condition(std::move(condition_)), if_true(std::move(if_true_)) {}
 };
+class BashElseStatement : public BashStatement {
+public:
+    std::vector<std::unique_ptr<Bash>> scope;
+    BashElseStatement(
+        std::vector<std::unique_ptr<Bash>> scope_ = std::vector<std::unique_ptr<Bash>>{})
+        : scope(std::move(scope_)) {}
+};
 
 class BashIrGenerator : public Visitor {
 private:
@@ -140,6 +147,7 @@ public:
     void visit(VariableReassignment& node) override;
     void visit(FunctionCallStmt& node) override;
     void visit(ElseIfStatement& node) override;
+    void visit(ElseStatement& node) override;
 
     void generate_bash_ir();
     std::vector<std::unique_ptr<BashStatement>> get_bash_ir();

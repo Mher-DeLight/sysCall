@@ -130,3 +130,8 @@ void BashIrGenerator::visit(ElseIfStatement& node) {
     else
         node.nextStatement->accept(*this);
 }
+void BashIrGenerator::visit(ElseStatement& node) {
+    bash_ir.push_back(std::make_unique<BashElseStatement>());
+    node.block->accept(*this);
+    bash_ir.push_back(std::make_unique<BashEndIfStatement>());
+}

@@ -284,6 +284,14 @@ public:
         : ConditionalStatement(lct), condition(std::move(condition_)), block(std::move(block_)),
           nextStatement(std::move(nextStatement_)) {}
 };
+class ElseStatement : public ConditionalStatement {
+public:
+    std::unique_ptr<ScopeBlock> block;
+    void accept(Visitor& visitor) override;
+
+    ElseStatement(const SourceLocation& lct, std::unique_ptr<ScopeBlock> block_)
+        : ConditionalStatement(lct), block(std::move(block_)) {}
+};
 
 class Literal : public Expression {
 public:
@@ -346,6 +354,7 @@ public:
     virtual void visit(VariableReassignment& node) = 0;
     virtual void visit(FunctionCallStmt& node) = 0;
     virtual void visit(ElseIfStatement& node) = 0;
+    virtual void visit(ElseStatement& node) = 0;
 };
 class PrettyPrinter : public Visitor {
 private:
@@ -371,6 +380,7 @@ public:
     void visit(VariableReassignment& node) override;
     void visit(FunctionCallStmt& node) override;
     void visit(ElseIfStatement& node) override;
+    void visit(ElseStatement& node) override;
 };
 
 inline void ScopeBlock::accept(Visitor& visitor) {
@@ -416,5 +426,8 @@ inline void FunctionCallStmt::accept(Visitor& visitor) {
     visitor.visit(*this);
 }
 inline void ElseIfStatement::accept(Visitor& visitor) {
+    visitor.visit(*this);
+}
+inline void ElseStatement::accept(Visitor& visitor) {
     visitor.visit(*this);
 }
