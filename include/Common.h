@@ -271,6 +271,19 @@ public:
                      std::vector<std::unique_ptr<Expression>> args_)
         : Statement(src), identifier(identifier_), args(std::move(args_)) {}
 };
+class ElseIfStatement : public ConditionalStatement {
+public:
+    std::unique_ptr<Expression> condition;
+    std::unique_ptr<ScopeBlock> block;
+    std::unique_ptr<ConditionalStatement> nextStatement;
+    void accept(Visitor& visitor) override;
+
+    ElseIfStatement(const SourceLocation& lct, std::unique_ptr<Expression> condition_,
+                    std::unique_ptr<ScopeBlock> block_,
+                    std::unique_ptr<ConditionalStatement> nextStatement_)
+        : ConditionalStatement(lct), condition(std::move(condition_)), block(std::move(block_)),
+          nextStatement(std::move(nextStatement_)) {}
+};
 
 class Literal : public Expression {
 public:
@@ -332,6 +345,7 @@ public:
     virtual void visit(UnaryExpression& node) = 0;
     virtual void visit(VariableReassignment& node) = 0;
     virtual void visit(FunctionCallStmt& node) = 0;
+    virtual void visit(ElseIfStatement& node) = 0;
 };
 class PrettyPrinter : public Visitor {
 private:
@@ -356,6 +370,7 @@ public:
     void visit(UnaryExpression& node) override;
     void visit(VariableReassignment& node) override;
     void visit(FunctionCallStmt& node) override;
+    void visit(ElseIfStatement& node) override;
 };
 
 inline void ScopeBlock::accept(Visitor& visitor) {
@@ -398,5 +413,8 @@ inline void VariableReassignment::accept(Visitor& visitor) {
     visitor.visit(*this);
 }
 inline void FunctionCallStmt::accept(Visitor& visitor) {
+    visitor.visit(*this);
+}
+inline void ElseIfStatement::accept(Visitor& visitor) {
     visitor.visit(*this);
 }

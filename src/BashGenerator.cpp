@@ -80,7 +80,10 @@ void BashIrGenerator::visit(IfStatement& node) {
 
     node.block->accept(*this);
 
-    bash_ir.push_back(std::make_unique<BashEndIfStatement>());
+    if (!node.nextStatement)
+        bash_ir.push_back(std::make_unique<BashEndIfStatement>());
+    else
+        node.nextStatement->accept(*this);
 }
 void BashIrGenerator::visit(FunctionCallExpr& node) {
     std::replace(node.identifier.begin(), node.identifier.end(), '.', ' ');
@@ -113,4 +116,17 @@ void BashIrGenerator::visit(FunctionCallStmt& node) {
 
     bash_ir.push_back(
         std::make_unique<BashFunctionCallStatement>(node.identifier, std::move(args)));
+}
+void BashIrGenerator::visit(ElseIfStatement& node) {
+    node.condition->accept(*this);
+    auto condition = getAsExpression(std::move(current_node));
+
+    bash_ir.push_back(std::make_unique<BashElseIfStatement>(std::move(condition)));
+
+    node.block->accept(*this);
+
+    if (!node.nextStatement)
+        bash_ir.push_back(std::make_unique<BashEndIfStatement>());
+    else
+        node.nextStatement->accept(*this);
 }

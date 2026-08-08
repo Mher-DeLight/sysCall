@@ -285,3 +285,9 @@ void SemanticAnalyser::visit(FunctionCallStmt& node) {
         arg->accept(*this);
     }
 }
+void SemanticAnalyser::visit(ElseIfStatement& node) {
+    node.condition->accept(*this);
+    node.block->accept(*this);
+    if (node.nextStatement != nullptr)
+        node.nextStatement->accept(*this);
+}

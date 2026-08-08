@@ -101,6 +101,16 @@ public:
                               std::vector<std::unique_ptr<BashExpression>> args_)
         : identifier(identifier_), args(std::move(args_)) {}
 };
+class BashElseIfStatement : public BashStatement {
+public:
+    std::unique_ptr<BashExpression> condition;
+    std::vector<std::unique_ptr<Bash>> if_true;
+
+    BashElseIfStatement(
+        std::unique_ptr<BashExpression> condition_,
+        std::vector<std::unique_ptr<Bash>> if_true_ = std::vector<std::unique_ptr<Bash>>{})
+        : condition(std::move(condition_)), if_true(std::move(if_true_)) {}
+};
 
 class BashIrGenerator : public Visitor {
 private:
@@ -129,6 +139,7 @@ public:
     void visit(UnaryExpression& node) override;
     void visit(VariableReassignment& node) override;
     void visit(FunctionCallStmt& node) override;
+    void visit(ElseIfStatement& node) override;
 
     void generate_bash_ir();
     std::vector<std::unique_ptr<BashStatement>> get_bash_ir();

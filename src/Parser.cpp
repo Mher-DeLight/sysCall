@@ -86,8 +86,15 @@ std::unique_ptr<IfStatement> Parser::parseIfStatement() {
     eat(TokenType::RParen, "expected ')' after if statement condition");
 
     std::unique_ptr<ScopeBlock> scope = parseScope(true);
+    std::unique_ptr<ElseIfStatement> nextElseIf = nullptr;
+    while (check(TokenType::KeywordElse)) {
+        if (peek(1).type == TokenType::KeywordIf) {
+            nextElseIf = parseElseIfStatement();
+        }
+    }
 
-    return std::make_unique<IfStatement>(lct, std::move(condition), std::move(scope), nullptr);
+    return std::make_unique<IfStatement>(lct, std::move(condition), std::move(scope),
+                                         std::move(nextElseIf));
 }
 std::unique_ptr<FunctionCallExpr> Parser::parseFunctionCallExpr() {
     Token tkn = eat(TokenType::Identifier, "expected identifier for function call");
@@ -156,6 +163,26 @@ std::unique_ptr<FunctionCallStmt> Parser::parseFunctionCallStmt() {
 
     eat(TokenType::Semicolon, "expected semi colon after function call");
     return std::make_unique<FunctionCallStmt>(tkn.location, identifier, std::move(args));
+}
+std::unique_ptr<ElseIfStatement> Parser::parseElseIfStatement() {
+    auto lct =
+        eat(TokenType::KeywordElse, "expected keyword 'else' for else if statement").location;
+    eat(TokenType::KeywordIf, "expected 'if' keyword for else if statement");
+    eat(TokenType::LParen, "expected '(' after if statement");
+    std::unique_ptr<Expression> condition = parseExpression();
+
+    eat(TokenType::RParen, "expected ')' after if statement condition");
+
+    std::unique_ptr<ScopeBlock> scope = parseScope(true);
+    std::unique_ptr<ElseIfStatement> nextElseIf = nullptr;
+    while (check(TokenType::KeywordElse)) {
+        if (peek(1).type == TokenType::KeywordIf) {
+            nextElseIf = parseElseIfStatement();
+        }
+    }
+
+    return std::make_unique<ElseIfStatement>(lct, std::move(condition), std::move(scope),
+                                             std::move(nextElseIf));
 }
 
 // == EXPRESSION PARSERS ==

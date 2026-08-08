@@ -115,3 +115,13 @@ void PrettyPrinter::visit(FunctionCallStmt& node) {
     }
     indent--;
 }
+void PrettyPrinter::visit(ElseIfStatement& node) {
+    printIndent();
+
+    stream << "ElseIfStatement\n";
+    indent++;
+    node.condition->accept(*this);
+    node.block->accept(*this);
+    if (node.nextStatement != nullptr)
+        node.nextStatement->accept(*this);
+}

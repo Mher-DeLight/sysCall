@@ -42,6 +42,7 @@ private:
     std::unique_ptr<VariableDefinition> parseVariableDeclaration();
     std::unique_ptr<VariableReassignment> parseVariableReassignment();
     std::unique_ptr<IfStatement> parseIfStatement();
+    std::unique_ptr<ElseIfStatement> parseElseIfStatement();
     std::unique_ptr<ScopeBlock> parseScope(bool require_brackets = true);
 
     // clang-format on

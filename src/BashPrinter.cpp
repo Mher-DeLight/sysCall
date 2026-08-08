@@ -26,6 +26,10 @@ void BashPrinter::print_dispatcher(Bash* node, std::ostream& stream) {
         return print(*nd, stream);
     } else if (auto nd = dynamic_cast<BashVariableReference*>(node)) {
         return print(*nd, stream);
+    } else if (auto nd = dynamic_cast<BashElseIfStatement*>(node)) {
+        return print(*nd, stream);
+    } else {
+        panic("invalid node for bash generator");
     }
 }
 
@@ -238,7 +242,6 @@ void BashPrinter::print(BashIfStatement& node, std::ostream& stream) {
 }
 
 void BashPrinter::print(BashEndIfStatement& node, std::ostream& stream) {
-    (void)node;
     stream << "fi";
 }
 
@@ -260,5 +263,20 @@ void BashPrinter::print(BashFunctionCallStatement& node, std::ostream& stream) {
             print_dispatcher(arg.get(), stream);
             stream << " ";
         }
+    }
+}
+
+void BashPrinter::print(BashElseIfStatement& node, std::ostream& stream) {
+    stream << "elif [[ ";
+    if (node.condition->type != VariableType::BOOL)
+        node.condition->wrap_type = WrapType::COMMAND_WRAP; // cuz it would use bc -l
+    else
+        node.condition->wrap_type = WrapType::NONE;
+    print_dispatcher(node.condition.get(), stream);
+
+    stream << " ]]; then";
+    for (auto& then : node.if_true) {
+        stream << "\n";
+        print_dispatcher(then.get(), stream);
     }
 }
