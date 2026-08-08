@@ -107,6 +107,10 @@ void Tokenizer::tokenize(const std::string& c) {
                 advance();
             }
 
+            if (str == "__END_OF_FILE__") {
+                token(TokenType::EndOfFile, "", location);
+                return;
+            }
             token(get_word_type(str), str, location);
             continue;
         } else if (is_character(current())) {

@@ -395,7 +395,7 @@ Token& Parser::previous(int offset) {
     return tokens[cursor - offset];
 }
 bool Parser::isEnd() {
-    return cursor >= std::ssize(tokens);
+    return check(TokenType::EndOfFile);
 }
 bool Parser::match(TokenType type) {
     if (check(type)) {
