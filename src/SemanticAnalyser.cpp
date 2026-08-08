@@ -294,3 +294,9 @@ void SemanticAnalyser::visit(ElseIfStatement& node) {
 void SemanticAnalyser::visit(ElseStatement& node) {
     node.block->accept(*this);
 }
+void SemanticAnalyser::visit(ForLoop& node) {
+    node.definition->accept(*this);
+    node.condition->accept(*this);
+    node.then_do->accept(*this);
+    node.scope->accept(*this);
+}

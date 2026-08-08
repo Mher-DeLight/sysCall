@@ -135,3 +135,48 @@ void BashIrGenerator::visit(ElseStatement& node) {
     node.block->accept(*this);
     bash_ir.push_back(std::make_unique<BashEndIfStatement>());
 }
+void BashIrGenerator::visit(ForLoop& node) {
+    node.definition->accept(*this);
+
+    auto bs_asg = std::move(bash_ir.back());
+    auto asg = dynamic_cast<BashAssignment*>(bs_asg.get());
+
+    if (!asg) {
+        genPanic("expected assignment statement in for loop", node.definition->location);
+        return;
+    }
+
+    std::unique_ptr<BashAssignment> definition(static_cast<BashAssignment*>(bs_asg.release()));
+    bash_ir.pop_back();
+
+    node.condition->accept(*this);
+
+    auto cond = dynamic_cast<BashBinaryExpression*>(current_node.get());
+    if (!cond) {
+        genPanic("expected binary expression in for loop", node.condition->location);
+        return;
+    }
+
+    std::unique_ptr<BashBinaryExpression> condition(
+        static_cast<BashBinaryExpression*>(current_node.release()));
+
+    node.then_do->accept(*this);
+
+    auto bs_td = std::move(bash_ir.back());
+    auto td = dynamic_cast<BashStatement*>(bs_td.get());
+
+    if (!td) {
+        genPanic("expected statement in for loop", node.then_do->location);
+        return;
+    }
+
+    std::unique_ptr<BashStatement> then_do(static_cast<BashStatement*>(bs_td.release()));
+    bash_ir.pop_back();
+
+    bash_ir.push_back(std::make_unique<BashForLoop>(std::move(definition), std::move(condition),
+                                                    std::move(then_do)));
+
+    node.scope->accept(*this);
+
+    bash_ir.push_back(std::make_unique<BashDone>());
+}

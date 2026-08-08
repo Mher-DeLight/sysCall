@@ -106,6 +106,19 @@ public:
         : condition(std::move(condition_)) {}
 };
 class BashElseStatement : public BashStatement {};
+class BashForLoop : public BashStatement {
+public:
+    std::unique_ptr<BashAssignment> assignment;
+    std::unique_ptr<BashBinaryExpression> condition;
+    std::unique_ptr<BashStatement> then_do;
+
+    BashForLoop(std::unique_ptr<BashAssignment> assignment_,
+                std::unique_ptr<BashBinaryExpression> condition_,
+                std::unique_ptr<BashStatement> then_do_)
+        : assignment(std::move(assignment_)), condition(std::move(condition_)),
+          then_do(std::move(then_do_)) {}
+};
+class BashDone : public BashStatement {};
 
 class BashIrGenerator : public Visitor {
 private:
@@ -136,6 +149,7 @@ public:
     void visit(FunctionCallStmt& node) override;
     void visit(ElseIfStatement& node) override;
     void visit(ElseStatement& node) override;
+    void visit(ForLoop& node) override;
 
     void generate_bash_ir();
     std::vector<std::unique_ptr<BashStatement>> get_bash_ir();

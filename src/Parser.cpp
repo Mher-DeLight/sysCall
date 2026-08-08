@@ -14,9 +14,6 @@ std::unique_ptr<ScopeBlock> Parser::hand_over_AST() {
 void Parser::parse() {
     cursor = 0;
     entry_point = parseScope(false);
-
-    PrettyPrinter printer(std::cout);
-    entry_point->accept(printer);
 }
 std::unique_ptr<ScopeBlock> Parser::parseScope(bool require_brackets) {
     std::unique_ptr<ScopeBlock> scope = std::make_unique<ScopeBlock>();
@@ -25,22 +22,9 @@ std::unique_ptr<ScopeBlock> Parser::parseScope(bool require_brackets) {
         eat(TokenType::LBrace, "expected '{' on scope entry");
 
     while (!isEnd()) {
-        if (check(TokenType::KeywordVartype)) {
-            scope->children.push_back(parseVariableDeclaration());
-        } else if (check(TokenType::KeywordIf)) {
-            scope->children.push_back(parseIfStatement());
-        } else if (check(TokenType::Identifier)) {
-            if (peek(1).type == TokenType::LParen || peek(1).type == TokenType::Period) {
-                scope->children.push_back(parseFunctionCallStmt());
-            } else {
-                scope->children.push_back(parseVariableReassignment());
-            }
-        } else if (check(TokenType::Semicolon)) {
-            eat(TokenType::Semicolon, "expected semicolon");
-        } else if (check(TokenType::Hashtag)) {
-            parsePreword();
-        } else {
-            parserPanic("invalid token \"" + peek().lexeme + "\"", peek().location);
+        auto stmt = parseStatement();
+        if (stmt != nullptr) {
+            scope->children.push_back(std::move(stmt));
         }
 
         if (match(TokenType::EndOfFile))
@@ -52,6 +36,30 @@ std::unique_ptr<ScopeBlock> Parser::parseScope(bool require_brackets) {
 }
 
 // == PARSE FUNCTIONS ==
+std::unique_ptr<Statement> Parser::parseStatement() {
+    if (match(TokenType::Semicolon))
+        return nullptr;
+
+    if (check(TokenType::KeywordVartype)) {
+        return parseVariableDeclaration();
+    } else if (check(TokenType::KeywordIf)) {
+        return parseIfStatement();
+    } else if (check(TokenType::Identifier)) {
+        if (peek(1).type == TokenType::LParen || peek(1).type == TokenType::Period) {
+            return parseFunctionCallStmt();
+        } else {
+            return parseVariableReassignment();
+        }
+    } else if (check(TokenType::Hashtag)) {
+        parsePreword();
+        return nullptr;
+    } else if (check(TokenType::KeywordFor)) {
+        return parseForLoop();
+    } else {
+        parserPanic("invalid token \"" + peek().lexeme + "\"", peek().location);
+        return nullptr;
+    }
+}
 std::unique_ptr<VariableDefinition> Parser::parseVariableDeclaration() {
     Token tkn = eat(TokenType::KeywordVartype, "expected variable type for variable declaration");
 
@@ -195,6 +203,19 @@ std::unique_ptr<ElseStatement> Parser::parseElseStatement() {
     auto lct = eat(TokenType::KeywordElse, "expected 'else' keyword for else").location;
     std::unique_ptr<ScopeBlock> scope = parseScope(true);
     return std::make_unique<ElseStatement>(lct, std::move(scope));
+}
+std::unique_ptr<ForLoop> Parser::parseForLoop() {
+    eat(TokenType::KeywordFor, "expected 'for' keyword for for loop");
+    eat(TokenType::LParen, "expected '(' after 'for' for for loop");
+    auto def = parseVariableDeclaration();
+    auto cond = parseExpression();
+    eat(TokenType::Semicolon);
+    auto stmt = parseStatement();
+    eat(TokenType::RParen, "expected ')' after 'for' for for loop");
+
+    auto scope = parseScope(true);
+    return std::make_unique<ForLoop>(std::move(def), std::move(cond), std::move(stmt),
+                                     std::move(scope));
 }
 
 // == EXPRESSION PARSERS ==

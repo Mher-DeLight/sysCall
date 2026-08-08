@@ -3,6 +3,8 @@
 
 class BashPrinter {
     std::vector<std::unique_ptr<BashStatement>> bash;
+    bool use_ugly_flags = true;
+    bool use_bc_arithmetic = true;
 
     void print(BashBinaryExpression& node, std::ostream& stream);
     void print(BashLiteral& node, std::ostream& stream);
@@ -15,6 +17,8 @@ class BashPrinter {
     void print(BashFunctionCallStatement& node, std::ostream& stream);
     void print(BashElseIfStatement& node, std::ostream& stream);
     void print(BashElseStatement& node, std::ostream& stream);
+    void print(BashForLoop& node, std::ostream& stream);
+    void print(BashDone& node, std::ostream& stream);
 
     void print_dispatcher(Bash* node, std::ostream& stream);
     std::string wrap(const std::string& string, WrapType wrap_type);

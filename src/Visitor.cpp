@@ -134,3 +134,13 @@ void PrettyPrinter::visit(ElseStatement& node) {
     node.block->accept(*this);
     indent--;
 }
+void PrettyPrinter::visit(ForLoop& node) {
+    printIndent();
+    stream << "ForLoop\n";
+    indent++;
+    node.definition->accept(*this);
+    node.condition->accept(*this);
+    node.then_do->accept(*this);
+    node.scope->accept(*this);
+    indent--;
+}

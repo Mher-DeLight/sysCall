@@ -2,6 +2,7 @@
 #include "../include/Common.h"
 #include "../include/ErrorHandler.h"
 #include <algorithm>
+#include <cassert>
 #include <iostream>
 #include <sstream>
 
@@ -9,6 +10,10 @@ void BashPrinter::load_bash(std::vector<std::unique_ptr<BashStatement>> bsh) {
     bash = std::move(bsh);
 }
 void BashPrinter::print_dispatcher(Bash* node, std::ostream& stream) {
+    if (!node) {
+        panic("invalid pointer to node");
+    }
+
     if (auto nd = dynamic_cast<BashAssignment*>(node)) {
         return print(*nd, stream);
     } else if (auto nd = dynamic_cast<BashIfStatement*>(node)) {
@@ -28,6 +33,10 @@ void BashPrinter::print_dispatcher(Bash* node, std::ostream& stream) {
     } else if (auto nd = dynamic_cast<BashElseIfStatement*>(node)) {
         return print(*nd, stream);
     } else if (auto nd = dynamic_cast<BashElseStatement*>(node)) {
+        return print(*nd, stream);
+    } else if (auto nd = dynamic_cast<BashForLoop*>(node)) {
+        return print(*nd, stream);
+    } else if (auto nd = dynamic_cast<BashDone*>(node)) {
         return print(*nd, stream);
     } else {
         panic("invalid node for bash generator");
@@ -59,17 +68,17 @@ std::string BashPrinter::wrap(const std::string& string, WrapType wrap_type) {
 std::string BashPrinter::get_operation(BinaryOperation operation) {
     switch (operation) {
         case BinaryOperation::EQUALS:
-            return " -eq ";
+            return use_ugly_flags ? " -eq " : " == ";
         case BinaryOperation::NOT_EQUALS:
-            return " -ne ";
+            return use_ugly_flags ? " -ne " : " != ";
         case BinaryOperation::GREATER_THAN:
-            return " -gt ";
+            return use_ugly_flags ? " -gt " : " > ";
         case BinaryOperation::GREATER_THAN_OR_EQUAL:
-            return " -ge ";
+            return use_ugly_flags ? " -ge " : " >= ";
         case BinaryOperation::LESS_THAN:
-            return " -lt ";
+            return use_ugly_flags ? " -lt " : " < ";
         case BinaryOperation::LESS_THAN_OR_EQUAL:
-            return " -le ";
+            return use_ugly_flags ? " -le " : " <= ";
         case BinaryOperation::ADD:
             return " + ";
         case BinaryOperation::SUBTRACT:
@@ -185,23 +194,34 @@ void BashPrinter::print(BashBinaryExpression& node, std::ostream& stream) {
     }
 
     std::ostringstream output;
-    output << "bc -l <<< \"";
-    if (auto* binexpr = dynamic_cast<BashBinaryExpression*>(node.left.get())) {
-        if (binexpr->type != VariableType::STRING) {
-            node.left->wrap_type = WrapType::COMMAND_WRAP;
+    if (use_bc_arithmetic) {
+        output << "bc -l <<< \"";
+        if (auto* binexpr = dynamic_cast<BashBinaryExpression*>(node.left.get())) {
+            if (binexpr->type != VariableType::STRING) {
+                node.left->wrap_type = WrapType::COMMAND_WRAP;
+            }
         }
-    }
-    print_dispatcher(node.left.get(), output);
-    output << get_operation(node.operation);
-    if (auto* binexpr = dynamic_cast<BashBinaryExpression*>(node.right.get())) {
-        if (binexpr->type != VariableType::STRING) {
-            node.left->wrap_type = WrapType::COMMAND_WRAP;
+        print_dispatcher(node.left.get(), output);
+        output << get_operation(node.operation);
+        if (auto* binexpr = dynamic_cast<BashBinaryExpression*>(node.right.get())) {
+            if (binexpr->type != VariableType::STRING) {
+                node.left->wrap_type = WrapType::COMMAND_WRAP;
+            }
         }
-    }
-    print_dispatcher(node.right.get(), output);
-    output << "\"";
+        print_dispatcher(node.right.get(), output);
+        output << "\"";
 
-    stream << wrap(output.str(), node.wrap_type);
+        stream << wrap(output.str(), node.wrap_type);
+    } else {
+        output << "$((";
+
+        print_dispatcher(node.left.get(), output);
+        output << get_operation(node.operation);
+        print_dispatcher(node.right.get(), output);
+
+        output << "))";
+        stream << wrap(output.str(), node.wrap_type);
+    }
 }
 void BashPrinter::print(BashLiteral& node, std::ostream& stream) {
     stream << wrap(node.data, node.wrap_type);
@@ -274,4 +294,23 @@ void BashPrinter::print(BashElseIfStatement& node, std::ostream& stream) {
 }
 void BashPrinter::print(BashElseStatement& node, std::ostream& stream) {
     stream << "else";
+}
+void BashPrinter::print(BashForLoop& node, std::ostream& stream) {
+    stream << "for ((";
+    print_dispatcher(node.assignment.get(), stream);
+    stream << "; ";
+
+    node.condition->wrap_type = WrapType::NONE;
+    use_ugly_flags = false;
+    use_bc_arithmetic = false;
+    print_dispatcher(node.condition.get(), stream);
+    use_ugly_flags = true;
+
+    stream << "; ";
+    print_dispatcher(node.then_do.get(), stream);
+    use_bc_arithmetic = false;
+    stream << ")); do";
+}
+void BashPrinter::print(BashDone& node, std::ostream& stream) {
+    stream << "done";
 }

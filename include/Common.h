@@ -54,6 +54,7 @@ enum class TokenType {
     KeywordIf,
     KeywordElse,
     KeywordVartype,
+    KeywordFor,
 
     PrewordInclude,
 
@@ -106,6 +107,8 @@ const std::unordered_map<std::string, TokenType> word_table{
      {"string", TokenType::KeywordVartype},
      {"bool", TokenType::KeywordVartype},
      {"auto", TokenType::KeywordVartype},
+     {"for", TokenType::KeywordFor},
+
      {"include", TokenType::PrewordInclude},
 
      {"true", TokenType::BoolLiteral},
@@ -224,6 +227,7 @@ public:
     virtual void accept(Visitor& visitor) = 0;
 
     Statement(const SourceLocation& lct) : location(lct) {}
+    Statement() {}
 };
 class ConditionalStatement : public Statement {
 public:
@@ -299,6 +303,19 @@ public:
     ElseStatement(const SourceLocation& lct, std::unique_ptr<ScopeBlock> block_)
         : ConditionalStatement(lct), block(std::move(block_)) {}
 };
+class ForLoop : public Statement {
+public:
+    std::unique_ptr<VariableDefinition> definition;
+    std::unique_ptr<Expression> condition;
+    std::unique_ptr<Statement> then_do;
+    std::unique_ptr<ScopeBlock> scope;
+    void accept(Visitor& visitor) override;
+
+    ForLoop(std::unique_ptr<VariableDefinition> definition_, std::unique_ptr<Expression> condition_,
+            std::unique_ptr<Statement> then_do_, std::unique_ptr<ScopeBlock> scope_ = nullptr)
+        : definition(std::move(definition_)), condition(std::move(condition_)),
+          then_do(std::move(then_do_)), scope(std::move(scope_)) {}
+};
 
 class Literal : public Expression {
 public:
@@ -362,6 +379,7 @@ public:
     virtual void visit(FunctionCallStmt& node) = 0;
     virtual void visit(ElseIfStatement& node) = 0;
     virtual void visit(ElseStatement& node) = 0;
+    virtual void visit(ForLoop& node) = 0;
 };
 class PrettyPrinter : public Visitor {
 private:
@@ -388,6 +406,7 @@ public:
     void visit(FunctionCallStmt& node) override;
     void visit(ElseIfStatement& node) override;
     void visit(ElseStatement& node) override;
+    void visit(ForLoop& node) override;
 };
 
 inline void ScopeBlock::accept(Visitor& visitor) {
@@ -436,5 +455,8 @@ inline void ElseIfStatement::accept(Visitor& visitor) {
     visitor.visit(*this);
 }
 inline void ElseStatement::accept(Visitor& visitor) {
+    visitor.visit(*this);
+}
+inline void ForLoop::accept(Visitor& visitor) {
     visitor.visit(*this);
 }
