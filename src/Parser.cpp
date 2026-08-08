@@ -14,6 +14,9 @@ std::unique_ptr<ScopeBlock> Parser::hand_over_AST() {
 void Parser::parse() {
     cursor = 0;
     entry_point = parseScope(false);
+
+    PrettyPrinter printer(std::cout);
+    entry_point->accept(printer);
 }
 std::unique_ptr<ScopeBlock> Parser::parseScope(bool require_brackets) {
     std::unique_ptr<ScopeBlock> scope = std::make_unique<ScopeBlock>();

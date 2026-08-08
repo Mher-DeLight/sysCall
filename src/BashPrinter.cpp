@@ -122,7 +122,8 @@ void BashPrinter::print(BashBinaryExpression& node, std::ostream& stream) {
         }
         print_dispatcher(node.left.get(), output);
 
-        if (node.left->type == VariableType::STRING && node.right->type == VariableType::STRING) {
+        if ((node.left->type == VariableType::STRING && node.right->type == VariableType::STRING) ||
+            node.left->type == VariableType::BOOL && node.right->type == VariableType::BOOL) {
             if (node.operation == BinaryOperation::EQUALS) {
                 output << " == ";
             } else if (node.operation == BinaryOperation::NOT_EQUALS) {
@@ -252,6 +253,9 @@ void BashPrinter::print(BashFunctionCallStatement& node, std::ostream& stream) {
                 if (bexpr->type != VariableType::STRING) {
                     arg->wrap_type = WrapType::COMMAND_WRAP;
                 }
+            }
+            if (auto* bexpr = dynamic_cast<BashVariableReference*>(arg.get())) {
+                arg->wrap_type = WrapType::VARIABLE_WRAP;
             }
             print_dispatcher(arg.get(), stream);
             stream << " ";
