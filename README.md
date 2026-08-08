@@ -12,3 +12,6 @@ echo("What is your name?");
 read(name);
 echo("Hello " + name);
 ```
+
+## Installation
+As of now, we have not reached a first release, meaning to use sysCall you'll have to compile it yourself. That is quite easy, however. You can simply download the library and run `cmake -B build` then `cmake --build build`, which will generate an executable you can run in `build/`. Also make sure you have the `bc` library installed.
