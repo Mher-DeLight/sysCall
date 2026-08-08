@@ -81,12 +81,9 @@ public:
 class BashIfStatement : public BashStatement {
 public:
     std::unique_ptr<BashExpression> condition;
-    std::vector<std::unique_ptr<Bash>> if_true;
 
-    BashIfStatement(
-        std::unique_ptr<BashExpression> condition_,
-        std::vector<std::unique_ptr<Bash>> if_true_ = std::vector<std::unique_ptr<Bash>>{})
-        : condition(std::move(condition_)), if_true(std::move(if_true_)) {}
+    BashIfStatement(std::unique_ptr<BashExpression> condition_)
+        : condition(std::move(condition_)) {}
 };
 class BashEndIfStatement : public BashStatement {
 public:
@@ -104,20 +101,11 @@ public:
 class BashElseIfStatement : public BashStatement {
 public:
     std::unique_ptr<BashExpression> condition;
-    std::vector<std::unique_ptr<Bash>> if_true;
 
-    BashElseIfStatement(
-        std::unique_ptr<BashExpression> condition_,
-        std::vector<std::unique_ptr<Bash>> if_true_ = std::vector<std::unique_ptr<Bash>>{})
-        : condition(std::move(condition_)), if_true(std::move(if_true_)) {}
+    BashElseIfStatement(std::unique_ptr<BashExpression> condition_)
+        : condition(std::move(condition_)) {}
 };
-class BashElseStatement : public BashStatement {
-public:
-    std::vector<std::unique_ptr<Bash>> scope;
-    BashElseStatement(
-        std::vector<std::unique_ptr<Bash>> scope_ = std::vector<std::unique_ptr<Bash>>{})
-        : scope(std::move(scope_)) {}
-};
+class BashElseStatement : public BashStatement {};
 
 class BashIrGenerator : public Visitor {
 private:

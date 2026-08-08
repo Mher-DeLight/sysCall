@@ -8,7 +8,6 @@
 void BashPrinter::load_bash(std::vector<std::unique_ptr<BashStatement>> bsh) {
     bash = std::move(bsh);
 }
-
 void BashPrinter::print_dispatcher(Bash* node, std::ostream& stream) {
     if (auto nd = dynamic_cast<BashAssignment*>(node)) {
         return print(*nd, stream);
@@ -34,7 +33,6 @@ void BashPrinter::print_dispatcher(Bash* node, std::ostream& stream) {
         panic("invalid node for bash generator");
     }
 }
-
 std::string BashPrinter::wrap(const std::string& string, WrapType wrap_type) {
     switch (wrap_type) {
         case WrapType::NONE:
@@ -58,7 +56,6 @@ std::string BashPrinter::wrap(const std::string& string, WrapType wrap_type) {
     }
     return string;
 }
-
 std::string BashPrinter::get_operation(BinaryOperation operation) {
     switch (operation) {
         case BinaryOperation::EQUALS:
@@ -95,8 +92,13 @@ std::string BashPrinter::get_operation(BinaryOperation operation) {
             return " ";
     }
 }
-
 void BashPrinter::print_bash(std::ostream& stream) {
+    stream << "#!/usr/bin/env bash\n";
+    stream << "# This is an auto-generated bash script.\n";
+    stream << "# Some parts may be optimized while others may be verbose.\n";
+    stream << "# This script was not optimized for readability. If possible, read the .scl script "
+              "that generated it.\n";
+    stream << "# == generated via sysCall == https://www.github.com/Mher-DeLight/sysCall ==\n\n";
     for (auto& bsh : bash) {
         print_dispatcher(bsh.get(), stream);
         stream << "\n";
@@ -200,11 +202,9 @@ void BashPrinter::print(BashBinaryExpression& node, std::ostream& stream) {
 
     stream << wrap(output.str(), node.wrap_type);
 }
-
 void BashPrinter::print(BashLiteral& node, std::ostream& stream) {
     stream << wrap(node.data, node.wrap_type);
 }
-
 void BashPrinter::print(BashFunctionCallExpression& node, std::ostream& stream) {
     stream << node.identifier;
     for (auto& arg : node.args) {
@@ -212,11 +212,9 @@ void BashPrinter::print(BashFunctionCallExpression& node, std::ostream& stream) 
         print_dispatcher(arg.get(), stream);
     }
 }
-
 void BashPrinter::print(BashVariableReference& node, std::ostream& stream) {
     stream << wrap(node.identifier, node.wrap_type);
 }
-
 void BashPrinter::print(BashAssignment& node, std::ostream& stream) {
     stream << node.identifier << "=";
     if (node.right->type == VariableType::INT || node.right->type == VariableType::FLOAT) {
@@ -227,7 +225,6 @@ void BashPrinter::print(BashAssignment& node, std::ostream& stream) {
         print_dispatcher(node.right.get(), stream);
     }
 }
-
 void BashPrinter::print(BashIfStatement& node, std::ostream& stream) {
     stream << "if [[ ";
     if (node.condition->type != VariableType::BOOL)
@@ -237,16 +234,10 @@ void BashPrinter::print(BashIfStatement& node, std::ostream& stream) {
     print_dispatcher(node.condition.get(), stream);
 
     stream << " ]]; then";
-    for (auto& then : node.if_true) {
-        stream << "\n";
-        print_dispatcher(then.get(), stream);
-    }
 }
-
 void BashPrinter::print(BashEndIfStatement& node, std::ostream& stream) {
     stream << "fi";
 }
-
 void BashPrinter::print(BashFunctionCallStatement& node, std::ostream& stream) {
     std::size_t dot_position = node.identifier.find(' ');
     std::string first_section = (dot_position == std::string::npos)
@@ -267,7 +258,6 @@ void BashPrinter::print(BashFunctionCallStatement& node, std::ostream& stream) {
         }
     }
 }
-
 void BashPrinter::print(BashElseIfStatement& node, std::ostream& stream) {
     stream << "elif [[ ";
     if (node.condition->type != VariableType::BOOL)
@@ -277,17 +267,7 @@ void BashPrinter::print(BashElseIfStatement& node, std::ostream& stream) {
     print_dispatcher(node.condition.get(), stream);
 
     stream << " ]]; then";
-    for (auto& then : node.if_true) {
-        stream << "\n";
-        print_dispatcher(then.get(), stream);
-    }
 }
-
 void BashPrinter::print(BashElseStatement& node, std::ostream& stream) {
     stream << "else";
-
-    for (auto& then : node.scope) {
-        stream << "\n";
-        print_dispatcher(then.get(), stream);
-    }
 }
