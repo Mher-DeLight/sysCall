@@ -151,7 +151,10 @@ void BashPrinter::print(BashBinaryExpression& node, std::ostream& stream) {
         } else if (auto* variable = dynamic_cast<BashVariableReference*>(node.left.get())) {
             variable->wrap_type = WrapType::VARIABLE_WRAP;
         } else if (auto* binar_expr = dynamic_cast<BashBinaryExpression*>(node.left.get())) {
-            binar_expr->wrap_type = WrapType::COMMAND_WRAP;
+            if (binar_expr->left->type == VariableType::STRING)
+                binar_expr->wrap_type = WrapType::DOUBLE_QUOTE;
+            else
+                binar_expr->wrap_type = WrapType::COMMAND_WRAP;
         }
         print_dispatcher(node.left.get(), output);
 
@@ -161,6 +164,10 @@ void BashPrinter::print(BashBinaryExpression& node, std::ostream& stream) {
             variable->wrap_type = WrapType::VARIABLE_WRAP;
         } else if (auto* binar_expr = dynamic_cast<BashBinaryExpression*>(node.right.get())) {
             binar_expr->wrap_type = WrapType::COMMAND_WRAP;
+            if (binar_expr->left->type == VariableType::STRING)
+                binar_expr->wrap_type = WrapType::DOUBLE_QUOTE;
+            else
+                binar_expr->wrap_type = WrapType::COMMAND_WRAP;
         }
         print_dispatcher(node.right.get(), output);
 
@@ -170,8 +177,18 @@ void BashPrinter::print(BashBinaryExpression& node, std::ostream& stream) {
 
     std::ostringstream output;
     output << "bc -l <<< \"";
+    if (auto* binexpr = dynamic_cast<BashBinaryExpression*>(node.left.get())) {
+        if (binexpr->type != VariableType::STRING) {
+            node.left->wrap_type = WrapType::COMMAND_WRAP;
+        }
+    }
     print_dispatcher(node.left.get(), output);
     output << get_operation(node.operation);
+    if (auto* binexpr = dynamic_cast<BashBinaryExpression*>(node.right.get())) {
+        if (binexpr->type != VariableType::STRING) {
+            node.left->wrap_type = WrapType::COMMAND_WRAP;
+        }
+    }
     print_dispatcher(node.right.get(), output);
     output << "\"";
 
@@ -235,6 +252,11 @@ void BashPrinter::print(BashFunctionCallStatement& node, std::ostream& stream) {
         stream << node.identifier << " ";
         for (auto& arg : node.args) {
             arg->wrap_type = WrapType::NONE;
+            if (auto* bexpr = dynamic_cast<BashBinaryExpression*>(arg.get())) {
+                if (bexpr->type != VariableType::STRING) {
+                    arg->wrap_type = WrapType::COMMAND_WRAP;
+                }
+            }
             print_dispatcher(arg.get(), stream);
             stream << " ";
         }
