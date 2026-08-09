@@ -251,12 +251,16 @@ void BashPrinter::print(BashAssignment& node, std::ostream& stream) {
 }
 void BashPrinter::print(BashIfStatement& node, std::ostream& stream) {
     bool is_bool = node.condition->type == VariableType::BOOL;
+    bool is_direct_bool = node.condition->type == VariableType::BOOL;
+    if (dynamic_cast<BashBinaryExpression*>(node.condition.get()))
+        is_direct_bool = false;
 
     node.condition->wrap_type = is_bool ? WrapType::NONE : WrapType::COMMAND_WRAP;
-    stream << "if " << (is_bool ? "" : "[[ ");
+
+    stream << "if " << (is_direct_bool ? "" : "[[ ");
     print_dispatcher(node.condition.get(), stream);
 
-    stream << (is_bool ? "" : " ]]") << "; then";
+    stream << (is_direct_bool ? "" : " ]]") << "; then";
 }
 void BashPrinter::print(BashEndIfStatement& node, std::ostream& stream) {
     stream << "fi";
