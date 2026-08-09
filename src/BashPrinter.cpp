@@ -240,23 +240,23 @@ void BashPrinter::print(BashVariableReference& node, std::ostream& stream) {
 }
 void BashPrinter::print(BashAssignment& node, std::ostream& stream) {
     stream << node.identifier << "=";
-    if (node.right->type == VariableType::INT || node.right->type == VariableType::FLOAT) {
+    if (node.right->type == VariableType::INT || node.right->type == VariableType::FLOAT ||
+        node.right->type == VariableType::BOOL) {
         node.right->wrap_type = WrapType::NONE;
         print_dispatcher(node.right.get(), stream);
-    } else if (node.right->type == VariableType::STRING || node.right->type == VariableType::BOOL) {
+    } else if (node.right->type == VariableType::STRING) {
         node.right->wrap_type = WrapType::DOUBLE_QUOTE;
         print_dispatcher(node.right.get(), stream);
     }
 }
 void BashPrinter::print(BashIfStatement& node, std::ostream& stream) {
-    stream << "if [[ ";
-    if (node.condition->type != VariableType::BOOL)
-        node.condition->wrap_type = WrapType::COMMAND_WRAP; // cuz it would use bc -l
-    else
-        node.condition->wrap_type = WrapType::NONE;
+    bool is_bool = node.condition->type == VariableType::BOOL;
+
+    node.condition->wrap_type = is_bool ? WrapType::NONE : WrapType::COMMAND_WRAP;
+    stream << "if " << (is_bool ? "" : "[[ ");
     print_dispatcher(node.condition.get(), stream);
 
-    stream << " ]]; then";
+    stream << (is_bool ? "" : " ]]") << "; then";
 }
 void BashPrinter::print(BashEndIfStatement& node, std::ostream& stream) {
     stream << "fi";
@@ -339,14 +339,21 @@ void BashPrinter::print(BashUnaryExpression& node, std::ostream& stream) {
     }
 
     std::stringstream output;
-    output << "$((";
+    if (!space)
+        output << "$((";
     output << unop;
     if (space)
         output << " ";
     if (dynamic_cast<BashVariableReference*>(node.value.get()))
         node.value->wrap_type = WrapType::NONE; // we want to modify the variable, not its value
+    if (dynamic_cast<BashBinaryExpression*>(node.value.get())) {
+        if (node.value->type == VariableType::BOOL) {
+            node.value->wrap_type = WrapType::NONE; // no need to wrap booleans
+        }
+    }
     print_dispatcher(node.value.get(), output);
 
-    output << "))";
+    if (!space)
+        output << "))";
     stream << wrap(output.str(), node.wrap_type);
 }
