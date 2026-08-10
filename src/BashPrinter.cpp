@@ -40,6 +40,10 @@ void BashPrinter::print_dispatcher(Bash* node, std::ostream& stream) {
         return print(*nd, stream);
     } else if (auto nd = dynamic_cast<BashUnaryExpression*>(node)) {
         return print(*nd, stream);
+    } else if (auto nd = dynamic_cast<BashFunctionDefinition*>(node)) {
+        return print(*nd, stream);
+    } else if (auto nd = dynamic_cast<BashFunctionDefinitionEnd*>(node)) {
+        return print(*nd, stream);
     } else {
         panic("invalid node for bash generator");
     }
@@ -360,4 +364,10 @@ void BashPrinter::print(BashUnaryExpression& node, std::ostream& stream) {
     if (!space)
         output << "))";
     stream << wrap(output.str(), node.wrap_type);
+}
+void BashPrinter::print(BashFunctionDefinition& node, std::ostream& stream) {
+    stream << "function " << node.identifier << " {";
+}
+void BashPrinter::print(BashFunctionDefinitionEnd& node, std::ostream& stream) {
+    stream << "}";
 }

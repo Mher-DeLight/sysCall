@@ -128,6 +128,13 @@ public:
           then_do(std::move(then_do_)) {}
 };
 class BashDone : public BashStatement {};
+class BashFunctionDefinition : public BashStatement {
+public:
+    std::string identifier;
+
+    BashFunctionDefinition(const std::string& identifier_) : identifier(identifier_) {}
+};
+class BashFunctionDefinitionEnd : public BashStatement {};
 
 class BashIrGenerator : public Visitor {
 private:
@@ -159,6 +166,7 @@ public:
     void visit(ElseIfStatement& node) override;
     void visit(ElseStatement& node) override;
     void visit(ForLoop& node) override;
+    void visit(FunctionDefinition& node) override;
 
     void generate_bash_ir();
     std::vector<std::unique_ptr<BashStatement>> get_bash_ir();

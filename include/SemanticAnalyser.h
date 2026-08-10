@@ -60,6 +60,7 @@ public:
     void visit(ElseIfStatement& node) override;
     void visit(ElseStatement& node) override;
     void visit(ForLoop& node) override;
+    void visit(FunctionDefinition& node) override;
 
     std::unique_ptr<ScopeBlock> hand_over_AST();
     void load_ast(uq<ScopeBlock> ast_);

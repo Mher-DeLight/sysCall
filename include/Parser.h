@@ -39,6 +39,7 @@ private:
         
     void parsePreword();
     std::unique_ptr<Statement> parseStatement();
+    std::unique_ptr<FunctionDefinition> parseFunctionDefinition();
     std::unique_ptr<FunctionCallStmt> parseFunctionCallStmt();
     std::unique_ptr<VariableDefinition> parseVariableDeclaration();
     std::unique_ptr<VariableReassignment> parseVariableReassignment();

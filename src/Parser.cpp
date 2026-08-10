@@ -41,6 +41,9 @@ std::unique_ptr<Statement> Parser::parseStatement() {
         return nullptr;
 
     if (check(TokenType::KeywordVartype)) {
+        if (peek(2).type == TokenType::LParen) {
+            return parseFunctionDefinition();
+        }
         return parseVariableDeclaration();
     } else if (check(TokenType::KeywordIf)) {
         return parseIfStatement();
@@ -216,6 +219,34 @@ std::unique_ptr<ForLoop> Parser::parseForLoop() {
     auto scope = parseScope(true);
     return std::make_unique<ForLoop>(std::move(def), std::move(cond), std::move(stmt),
                                      std::move(scope));
+}
+std::unique_ptr<FunctionDefinition> Parser::parseFunctionDefinition() {
+    Token tkn = eat(TokenType::KeywordVartype, "expected variable type for function definition");
+
+    std::string type_string = tkn.lexeme;
+    VariableType type = VariableType::VOID;
+
+    if (type_string == "int")
+        type = VariableType::INT;
+    else if (type_string == "string")
+        type = VariableType::STRING;
+    else if (type_string == "float")
+        type = VariableType::FLOAT;
+    else if (type_string == "bool")
+        type = VariableType::BOOL;
+    else if (type_string == "auto")
+        type = VariableType::VOID;
+    else if (type_string == "void")
+        type = VariableType::VOID;
+    else
+        parserPanic("invalid type \"" + type_string + "\"", tkn.location);
+
+    std::string identifier = eat(TokenType::Identifier, "expected function identifier").lexeme;
+    eat(TokenType::LParen, "expected '(' after identifier for function definition");
+    eat(TokenType::RParen, "expected ')' after identifier for function definition");
+    auto scope = parseScope(true);
+
+    return std::make_unique<FunctionDefinition>(identifier, std::move(scope));
 }
 
 // == EXPRESSION PARSERS ==

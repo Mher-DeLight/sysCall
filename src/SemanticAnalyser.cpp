@@ -313,3 +313,8 @@ void SemanticAnalyser::visit(ForLoop& node) {
     node.then_do->accept(*this);
     node.scope->accept(*this);
 }
+void SemanticAnalyser::visit(FunctionDefinition& node) {
+    addSymbol(Symbol(node.identifier, SymbolKind::Function, VariableType::VOID,
+                     std::vector<VariableType>{}));
+    node.scope->accept(*this);
+}

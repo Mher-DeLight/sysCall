@@ -109,6 +109,7 @@ const std::unordered_map<std::string, TokenType> word_table{
      {"string", TokenType::KeywordVartype},
      {"bool", TokenType::KeywordVartype},
      {"auto", TokenType::KeywordVartype},
+     {"void", TokenType::KeywordVartype},
      {"for", TokenType::KeywordFor},
 
      {"include", TokenType::PrewordInclude},
@@ -320,6 +321,16 @@ public:
         : definition(std::move(definition_)), condition(std::move(condition_)),
           then_do(std::move(then_do_)), scope(std::move(scope_)) {}
 };
+class FunctionDefinition : public Statement {
+public:
+    std::string identifier;
+    std::unique_ptr<ScopeBlock> scope;
+
+    void accept(Visitor& visitor) override;
+
+    FunctionDefinition(const std::string& identifier_, std::unique_ptr<ScopeBlock> scope_ = nullptr)
+        : identifier(identifier_), scope(std::move(scope_)) {}
+};
 
 class Literal : public Expression {
 public:
@@ -384,6 +395,7 @@ public:
     virtual void visit(ElseIfStatement& node) = 0;
     virtual void visit(ElseStatement& node) = 0;
     virtual void visit(ForLoop& node) = 0;
+    virtual void visit(FunctionDefinition& node) = 0;
 };
 class PrettyPrinter : public Visitor {
 private:
@@ -411,6 +423,7 @@ public:
     void visit(ElseIfStatement& node) override;
     void visit(ElseStatement& node) override;
     void visit(ForLoop& node) override;
+    void visit(FunctionDefinition& node) override;
 };
 
 inline void ScopeBlock::accept(Visitor& visitor) {
@@ -462,5 +475,8 @@ inline void ElseStatement::accept(Visitor& visitor) {
     visitor.visit(*this);
 }
 inline void ForLoop::accept(Visitor& visitor) {
+    visitor.visit(*this);
+}
+inline void FunctionDefinition::accept(Visitor& visitor) {
     visitor.visit(*this);
 }

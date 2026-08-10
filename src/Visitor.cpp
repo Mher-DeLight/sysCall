@@ -144,3 +144,10 @@ void PrettyPrinter::visit(ForLoop& node) {
     node.scope->accept(*this);
     indent--;
 }
+void PrettyPrinter::visit(FunctionDefinition& node) {
+    printIndent();
+    stream << "FunctionDefinition " << node.identifier << "\n";
+    indent++;
+    node.scope->accept(*this);
+    indent--;
+}

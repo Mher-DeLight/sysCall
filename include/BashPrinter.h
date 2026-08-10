@@ -20,6 +20,8 @@ class BashPrinter {
     void print(BashElseStatement& node, std::ostream& stream);
     void print(BashForLoop& node, std::ostream& stream);
     void print(BashDone& node, std::ostream& stream);
+    void print(BashFunctionDefinition& node, std::ostream& stream);
+    void print(BashFunctionDefinitionEnd& node, std::ostream& stream);
 
     void print_dispatcher(Bash* node, std::ostream& stream);
     std::string wrap(const std::string& string, WrapType wrap_type);

@@ -186,3 +186,8 @@ void BashIrGenerator::visit(ForLoop& node) {
 
     bash_ir.push_back(std::make_unique<BashDone>());
 }
+void BashIrGenerator::visit(FunctionDefinition& node) {
+    bash_ir.push_back(std::make_unique<BashFunctionDefinition>(node.identifier));
+    node.scope->accept(*this);
+    bash_ir.push_back(std::make_unique<BashFunctionDefinitionEnd>());
+}
