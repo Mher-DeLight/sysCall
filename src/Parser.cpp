@@ -358,6 +358,9 @@ std::unique_ptr<Expression> Parser::parseFactor() {
             advance(-2);
             return parseFunctionCallExpr();
         }
+        if (match(TokenType::Ampersand)) { // reflection operator
+            return std::make_unique<StringLiteral>(tkn.location, identifier);
+        }
         return std::make_unique<VariableReference>(tkn.location, identifier);
     }
     return parseLiteral();
