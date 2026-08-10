@@ -243,6 +243,8 @@ void BashPrinter::print(BashVariableReference& node, std::ostream& stream) {
     stream << wrap(node.identifier, node.wrap_type);
 }
 void BashPrinter::print(BashAssignment& node, std::ostream& stream) {
+    if (locality_depth > 0)
+        stream << "local ";
     stream << node.identifier << "=";
     if (node.right->type == VariableType::INT || node.right->type == VariableType::FLOAT ||
         node.right->type == VariableType::BOOL) {
@@ -275,7 +277,8 @@ void BashPrinter::print(BashFunctionCallStatement& node, std::ostream& stream) {
                                     ? node.identifier
                                     : node.identifier.substr(0, dot_position);
 
-    if (std::find(includes.begin(), includes.end(), first_section) != includes.end()) {
+    if (std::find(includes.begin(), includes.end(), first_section) !=
+        includes.end()) { // included functions cannot be shadowed
         stream << node.identifier << " ";
         for (auto& arg : node.args) {
             arg->wrap_type = WrapType::NONE;
@@ -290,6 +293,13 @@ void BashPrinter::print(BashFunctionCallStatement& node, std::ostream& stream) {
             print_dispatcher(arg.get(), stream);
             stream << " ";
         }
+        return;
+    }
+
+    stream << node.identifier; // bash apparently doesn't need () for function calls
+    for (auto& arg : node.args) {
+        stream << " ";
+        print_dispatcher(arg.get(), stream);
     }
 }
 void BashPrinter::print(BashElseIfStatement& node, std::ostream& stream) {
@@ -366,8 +376,10 @@ void BashPrinter::print(BashUnaryExpression& node, std::ostream& stream) {
     stream << wrap(output.str(), node.wrap_type);
 }
 void BashPrinter::print(BashFunctionDefinition& node, std::ostream& stream) {
+    locality_depth++;
     stream << "function " << node.identifier << " {";
 }
 void BashPrinter::print(BashFunctionDefinitionEnd& node, std::ostream& stream) {
     stream << "}";
+    locality_depth--;
 }

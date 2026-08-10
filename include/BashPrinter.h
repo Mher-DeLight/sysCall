@@ -5,6 +5,7 @@ class BashPrinter {
     std::vector<std::unique_ptr<BashStatement>> bash;
     bool use_ugly_flags = true;
     bool use_bc_arithmetic = true;
+    int locality_depth = 0;
 
     void print(BashBinaryExpression& node, std::ostream& stream);
     void print(BashLiteral& node, std::ostream& stream);
