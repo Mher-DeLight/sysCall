@@ -60,7 +60,7 @@ void BashIrGenerator::visit(VariableDefinition& node) {
     node.value->accept(*this);
     auto value = getAsExpression(std::move(current_node));
 
-    bash_ir.push_back(std::make_unique<BashAssignment>(node.identifier, std::move(value)));
+    bash_ir.push_back(std::make_unique<BashAssignment>(node.identifier, std::move(value), true));
 }
 void BashIrGenerator::visit(BinaryExpression& node) {
     node.left->accept(*this);
@@ -111,7 +111,7 @@ void BashIrGenerator::visit(UnaryExpression& node) {
 void BashIrGenerator::visit(VariableReassignment& node) {
     node.value->accept(*this);
     auto value = getAsExpression(std::move(current_node));
-    bash_ir.push_back(std::make_unique<BashAssignment>(node.identifier, std::move(value)));
+    bash_ir.push_back(std::make_unique<BashAssignment>(node.identifier, std::move(value), false));
 }
 void BashIrGenerator::visit(FunctionCallStmt& node) {
     std::vector<std::unique_ptr<BashExpression>> args;

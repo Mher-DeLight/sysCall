@@ -83,9 +83,11 @@ class BashAssignment : public BashStatement {
 public:
     std::string identifier;
     std::unique_ptr<BashExpression> right;
+    bool is_definition = false;
 
-    BashAssignment(const std::string& identifier_, std::unique_ptr<BashExpression> right_)
-        : identifier(identifier_), right(std::move(right_)) {}
+    BashAssignment(const std::string& identifier_, std::unique_ptr<BashExpression> right_,
+                   bool is_definition_)
+        : identifier(identifier_), right(std::move(right_)), is_definition(is_definition_) {}
 };
 class BashIfStatement : public BashStatement {
 public:

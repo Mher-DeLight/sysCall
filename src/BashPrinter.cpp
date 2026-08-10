@@ -243,7 +243,7 @@ void BashPrinter::print(BashVariableReference& node, std::ostream& stream) {
     stream << wrap(node.identifier, node.wrap_type);
 }
 void BashPrinter::print(BashAssignment& node, std::ostream& stream) {
-    if (locality_depth > 0)
+    if (locality_depth > 0 && node.is_definition)
         stream << "local ";
     stream << node.identifier << "=";
     if (node.right->type == VariableType::INT || node.right->type == VariableType::FLOAT ||
