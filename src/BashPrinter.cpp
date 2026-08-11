@@ -137,14 +137,26 @@ void BashPrinter::print(BashBinaryExpression& node, std::ostream& stream) {
         }
         print_dispatcher(node.left.get(), output);
 
-        if ((node.left->type == VariableType::STRING && node.right->type == VariableType::STRING) ||
-            node.left->type == VariableType::BOOL && node.right->type == VariableType::BOOL) {
+        if (node.left->type == VariableType::STRING && node.right->type == VariableType::STRING) {
             if (node.operation == BinaryOperation::EQUALS) {
                 output << " == ";
             } else if (node.operation == BinaryOperation::NOT_EQUALS) {
                 output << " != ";
             } else {
                 panic("Bash Printer cannot print non-equality check operator for two strings");
+            }
+        } else if (node.left->type == VariableType::BOOL &&
+                   node.right->type == VariableType::BOOL) {
+            if (node.operation == BinaryOperation::EQUALS) {
+                output << " == ";
+            } else if (node.operation == BinaryOperation::NOT_EQUALS) {
+                output << " != ";
+            } else if (node.operation == BinaryOperation::LOGICAL_OR) {
+                output << " || ";
+            } else if (node.operation == BinaryOperation::LOGICAL_AND) {
+                output << " && ";
+            } else {
+                panic("Bash Printer cannot print illogical check operator between two booleans");
             }
         } else {
             output << get_operation(node.operation);

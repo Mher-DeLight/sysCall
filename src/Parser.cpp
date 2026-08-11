@@ -258,7 +258,6 @@ std::unique_ptr<Expression> Parser::parseLogicalOr() {
     auto tkn = peek();
     auto node = parseLogicalAnd();
     while (match(TokenType::DoubleStraightLine)) {
-        advance();
         auto right = parseLogicalAnd();
         node = std::make_unique<BinaryExpression>(tkn.location, std::move(node),
                                                   BinaryOperation::LOGICAL_OR, std::move(right));
@@ -269,7 +268,6 @@ std::unique_ptr<Expression> Parser::parseLogicalAnd() {
     auto tkn = peek();
     auto node = parseEquality();
     while (match(TokenType::DoubleAmpersand)) {
-        advance();
         auto right = parseEquality();
         node = std::make_unique<BinaryExpression>(tkn.location, std::move(node),
                                                   BinaryOperation::LOGICAL_AND, std::move(right));
